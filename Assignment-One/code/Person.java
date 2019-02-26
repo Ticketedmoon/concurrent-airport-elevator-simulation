@@ -1,4 +1,4 @@
-public class Person
+public class Person implements Runnable
 {
     // ID should either be a number or a name.
     private static int id = 0;
@@ -18,5 +18,9 @@ public class Person
         this.destFloor = destFloor;
 
         this.id = ++Person.id;
+    }
+
+    public void run() {
+        System.out.println("Person (" + this.id + ") has started.");
     }
 }
