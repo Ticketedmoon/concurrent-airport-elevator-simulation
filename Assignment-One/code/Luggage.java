@@ -1,9 +1,16 @@
+import java.util.UUID;
+
 public class Luggage {
     private String luggageId;
     private int weight;
 
-    public Luggage(String luggageId, int weight) {
-        this.luggageId = luggageId;
+    /**
+     * Luggage Object Constructor.
+     * LuggageID is a random string generated using java.util.UUID.
+     * @param weight Weight amount passed in (Generally random)
+     */
+    public Luggage(int weight) {
+        this.luggageId = UUID.randomUUID().toString();
         this.weight = weight;
     }
 

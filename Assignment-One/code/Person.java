@@ -26,15 +26,13 @@ public class Person implements Runnable {
         this.arrivalTime = arrivalTime;
         this.arrivalFloor = arrivalFloor;
         this.destFloor = destFloor;
-
-        String luggageID =  UUID.randomUUID().toString();
-        this.luggage = new Luggage(luggageID, luggageWeight);
+        this.luggage = new Luggage(luggageWeight);
         this.id = ++id_counter;
     }
 
     @Override
     public void run() {
         double arrivalTime = (System.nanoTime() - timeOfCreation) / 1000000.0;
-        LOGGER.info(String.format("Person (%d) has arrived at time: %.2f. (Milliseconds)", this.id, arrivalTime));
+        LOGGER.info(String.format("Person (%d) has arrived at time: %.2f (Milliseconds)", this.id, arrivalTime));
     }
 }

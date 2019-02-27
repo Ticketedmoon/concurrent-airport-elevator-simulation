@@ -13,6 +13,7 @@ public class Airport {
     private ExecutorService taskExecutor;
     private ArrayList<Person> people;
 
+    // TODO: Can the program speed be increased here?
     public void initialize() {
 
         int startAmountOfPeople = ThreadLocalRandom.current().nextInt(1, 10 + 1);
