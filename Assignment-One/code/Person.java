@@ -34,7 +34,6 @@ public class Person implements Runnable {
 
     @Override
     public void run() {
-        System.out.println(System.nanoTime());
         double arrivalTime = (System.nanoTime() - timeOfCreation) / 1000000.0;
         LOGGER.info(String.format("Person (%d) has arrived at time: %.2f. (Milliseconds)", this.id, arrivalTime));
     }

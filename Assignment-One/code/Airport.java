@@ -21,13 +21,20 @@ public class Airport {
 
         LOGGER.info(String.format("Total Threads Generated: %d", startAmountOfPeople));
 
-        for (Person person : people) {
-            taskExecutor.submit(person);
+        try {
+            for (Person person : people) {
+                taskExecutor.submit(person);
+                Thread.sleep(10);
+            }
+        } catch (InterruptedException e) {
+            e.printStackTrace();
         }
-
-        taskExecutor.shutdownNow();
+        finally {
+            taskExecutor.shutdownNow();
+        }
     }
 
+    // TODO: Maybe move this method and generatePeople() to plane class?
     // For concurrent access, using ThreadLocalRandom instead of Math.random() results
     // in less contention and, ultimately, better performance.
     @NotNull
@@ -44,8 +51,8 @@ public class Airport {
 
     /**
      * Generate a list of people with random parameters (within a specific range)
-     * @param amount    The amount of people to generate
-     * @return    Arraylist of Person objects with random parameters.
+     * @param amount The amount of people to generate
+     * @return Arraylist of Person objects with random parameters.
      */
     private ArrayList<Person> generatePeople(int amount) {
         ArrayList<Person> people = new ArrayList<>();
