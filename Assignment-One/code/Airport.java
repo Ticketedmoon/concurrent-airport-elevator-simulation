@@ -1,25 +1,58 @@
+import org.jetbrains.annotations.NotNull;
+
 import java.util.ArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.logging.Logger;
 
 public class Airport {
 
-    private static ExecutorService taskExecutor = Executors.newFixedThreadPool(4);
-    private static ArrayList<Person> people = new ArrayList<>();
+    private static final Logger LOGGER = Logger.getLogger(Airport.class.getName());
+
+    private ExecutorService taskExecutor;
+    private ArrayList<Person> people;
 
     public void initialize() {
 
-        // Person Constructor:
-        // int weight, int luggageID, int luggageWeight,
-        // int arrivalTime, int arrivalFloor, int destFloor
+        int startAmountOfPeople = ThreadLocalRandom.current().nextInt(1, 10 + 1);
+        this.taskExecutor = Executors.newFixedThreadPool(startAmountOfPeople);
+        this.people = generatePeople(startAmountOfPeople);
 
-        System.out.println("test");
+        LOGGER.info(String.format("Total Threads Generated: %d", startAmountOfPeople));
 
-        Person j = new Person(1, 200, 70, 10, 5, 9);
-        Person k = new Person(2, 300, 80, 7, 5, 7);
-        Person m = new Person(3, 400, 90, 6, 1, 1);
+        for (Person person : people) {
+            taskExecutor.submit(person);
+        }
 
-        taskExecutor.submit(j);
         taskExecutor.shutdownNow();
+    }
+
+    // For concurrent access, using ThreadLocalRandom instead of Math.random() results
+    // in less contention and, ultimately, better performance.
+    @NotNull
+    private Person generatePerson() {
+        int weight = ThreadLocalRandom.current().nextInt(50, 100 + 1);
+        int luggageWeight = ThreadLocalRandom.current().nextInt(5, 30 + 1);
+        int arrivalTime =  ThreadLocalRandom.current().nextInt(1, 5 + 1);
+        int arrivalFloor =  ThreadLocalRandom.current().nextInt(1, 10 + 1);
+        // TODO: destFloor must be different to arrival floor.
+        int destFloor =  ThreadLocalRandom.current().nextInt(1, 10 + 1);
+
+        return new Person(weight, luggageWeight, arrivalTime, arrivalFloor, destFloor);
+    }
+
+    /**
+     * Generate a list of people with random parameters (within a specific range)
+     * @param amount    The amount of people to generate
+     * @return    Arraylist of Person objects with random parameters.
+     */
+    private ArrayList<Person> generatePeople(int amount) {
+        ArrayList<Person> people = new ArrayList<>();
+        for(int i = 0; i < amount; i++) {
+            Person person = this.generatePerson();
+            people.add(person);
+        }
+        return people;
     }
 }

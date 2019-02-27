@@ -1,9 +1,8 @@
-public class Luggage
-{
-    private int luggageId;
+public class Luggage {
+    private String luggageId;
     private int weight;
 
-    public Luggage(int luggageId, int weight) {
+    public Luggage(String luggageId, int weight) {
         this.luggageId = luggageId;
         this.weight = weight;
     }
@@ -12,7 +11,7 @@ public class Luggage
         return this.weight;
     }
 
-    public int getLuggageId() {
+    public String getLuggageId() {
         return this.luggageId;
     }
 }
