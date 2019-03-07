@@ -1,3 +1,5 @@
+package code;
+
 /**
  * More dynamic behaviour for the assignment
  * Planes can come in after a certain amount of seconds

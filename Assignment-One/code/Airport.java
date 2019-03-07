@@ -1,32 +1,37 @@
-import org.jetbrains.annotations.NotNull;
+package code;
+
+import com.sun.istack.internal.NotNull;
 
 import java.util.ArrayList;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
 public class Airport {
 
     private static final Logger LOGGER = Logger.getLogger(Airport.class.getName());
 
-    private ExecutorService taskExecutor;
+    private ScheduledExecutorService taskExecutor;
     private ArrayList<Person> people;
 
     // TODO: Can the program speed be increased here?
     public void initialize() {
 
         int startAmountOfPeople = ThreadLocalRandom.current().nextInt(1, 10 + 1);
-        this.taskExecutor = Executors.newFixedThreadPool(startAmountOfPeople);
+        this.taskExecutor = Executors.newScheduledThreadPool(startAmountOfPeople);
         this.people = generatePeople(startAmountOfPeople);
 
         LOGGER.info(String.format("Total Threads Generated: %d", startAmountOfPeople));
 
+
+        for (Person person : people) {
+            taskExecutor.schedule(person, person.getArrivalTime(),  TimeUnit.SECONDS);
+        }
+
         try {
-            for (Person person : people) {
-                taskExecutor.submit(person);
-                Thread.sleep(10);
-            }
+           taskExecutor.awaitTermination(Long.MAX_VALUE, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -38,7 +43,7 @@ public class Airport {
     // TODO: Maybe move this method and generatePeople() to plane class?
     // For concurrent access, using ThreadLocalRandom instead of Math.random() results
     // in less contention and, ultimately, better performance.
-    @NotNull
+   @NotNull
     private Person generatePerson() {
         int weight = ThreadLocalRandom.current().nextInt(50, 100 + 1);
         int luggageWeight = ThreadLocalRandom.current().nextInt(5, 30 + 1);
