@@ -1,6 +1,4 @@
-package code;
-
-import jdk.nashorn.internal.objects.annotations.Getter;
+package main.java;
 
 import java.sql.Timestamp;
 import java.util.concurrent.Callable;
@@ -39,7 +37,6 @@ public class Person implements Callable {
         return this;
     }
 
-    @Getter
     public long getArrivalTime() {
         return this.arrivalTime;
     }

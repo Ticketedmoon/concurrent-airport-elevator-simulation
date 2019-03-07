@@ -1,6 +1,6 @@
-package code;
+package main.java;
 
-import com.sun.istack.internal.NotNull;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -66,15 +66,18 @@ public class Airport {
         return people;
     }
 
-    // Schedule people to arrive at random intervals to the elevator (just a single elevator for now).
-    // Reverse collection due to ScheduledExecutor (Callable) being appended inversely.
+    /**
+     * Schedule people to arrive at random intervals to the elevator (just a single elevator for now).
+     * Reverse collection due to ScheduledExecutor (Callable) being appended inversely.
+     * @param startAmountOfPeople Total Amount of People eventually to arrive at the elevator.
+     * @param taskExecutor The scheduledExecutorService with size, S.
+     */
     private void schedulePeople(int startAmountOfPeople, ScheduledExecutorService taskExecutor) {
         LOGGER.info(String.format("Total Threads Generated: %d", startAmountOfPeople));
         this.people = generatePeople(startAmountOfPeople);
         for (Person person : people) {
             orderPeopleArrived.add(taskExecutor.schedule(person, person.getArrivalTime(), TimeUnit.SECONDS));
         }
-
         Collections.reverse(orderPeopleArrived);
     }
 }

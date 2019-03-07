@@ -1,4 +1,4 @@
-package code;
+package main.java;
 
 /**
  * More dynamic behaviour for the assignment
