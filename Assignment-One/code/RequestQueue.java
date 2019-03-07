@@ -1,9 +1,12 @@
+package code;
+
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 
 public class RequestQueue implements BlockingQueue {
+
     @Override
     public boolean add(Object o) {
         return false;

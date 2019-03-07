@@ -1,19 +1,20 @@
+package code;
+
+import jdk.nashorn.internal.objects.annotations.Getter;
+
+import java.sql.Timestamp;
 import java.util.logging.Logger;
-import java.util.UUID;
 
 public class Person implements Runnable {
 
     // Logger
     private static final Logger LOGGER = Logger.getLogger(Person.class.getName());
 
-    // Object creation time - useful for understanding elapsed time between threads.
-    private static long timeOfCreation = System.nanoTime();
-
     // Counter for static concurrent incrementation
     private static int id_counter = 0;
 
     // Default Person Object parameters.
-    private int id = 0;
+    private int id;
     private int weight;
     private int arrivalTime;
     private int arrivalFloor;
@@ -32,7 +33,17 @@ public class Person implements Runnable {
 
     @Override
     public void run() {
-        double arrivalTime = (System.nanoTime() - timeOfCreation) / 1000000.0;
-        LOGGER.info(String.format("Person (%d) has arrived at time: %.2f (Milliseconds)", this.id, arrivalTime));
+        Timestamp arrivalTime = new Timestamp(System.currentTimeMillis());
+        LOGGER.info(String.format("Person with ID: {%d} has arrived at %s", this.id, arrivalTime.toString()));
+    }
+
+    @Getter
+    public long getArrivalTime() {
+        return this.arrivalTime;
+    }
+
+    @Override
+    public String toString() {
+        return String.format("Person ID: {%d}", this.id);
     }
 }
