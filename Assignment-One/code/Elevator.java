@@ -11,23 +11,27 @@ import java.util.ArrayList;
   * 5. Random events such as faulty lifts etc... */
 
 public class Elevator {
+
     // Static elevatorID such that we can increment the class variable
-    // after each new Elevator object is created.
     private static int elevatorID = 0;
 
     // Static and Switch variables
     private String direction = "up";
+
+    // Start floor is 0 when elevators are created
     private int currentFloor = 0;
+
+    // Max weight is variable passed on constructor parameter.
     private final int maxWeightCapacity;
-    private boolean isFull;
+
+    // The weight of all the people currently on the elevator.
+    private int currentWeight;
 
     // Data structures for concurrency
     private ArrayList<Person> currentPassengers;
 
     // RequestQueue implements BlockingQueue (Concurrent queue data structure)
     private RequestQueue requestsForElevator;
-
-    // Attempt: Multiple concurrent elevators for more marks.
 
     // Introduce possible side effects, locking procedure more difficult but > marks.
     boolean outOfOrder;

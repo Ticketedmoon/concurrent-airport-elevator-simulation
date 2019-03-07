@@ -3,10 +3,8 @@ package code;
 import com.sun.istack.internal.NotNull;
 
 import java.util.ArrayList;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ThreadLocalRandom;
-import java.util.concurrent.TimeUnit;
+import java.util.Collections;
+import java.util.concurrent.*;
 import java.util.logging.Logger;
 
 public class Airport {
@@ -15,19 +13,20 @@ public class Airport {
 
     private ScheduledExecutorService taskExecutor;
     private ArrayList<Person> people;
+    private Elevator elevatorA;
+    private ArrayList<ScheduledFuture> orderPeopleArrived = new ArrayList<ScheduledFuture>();
 
-    // TODO: Can the program speed be increased here?
-    public void initialize() {
+    // Just initialise 1 elevator for now.
+    public Airport() {
+        this.elevatorA = new Elevator(400);
+    }
 
+    // For concurrent access, using ThreadLocalRandom instead of Math.random() results
+    // in less contention and, ultimately, better performance.
+    public void open() {
         int startAmountOfPeople = ThreadLocalRandom.current().nextInt(1, 10 + 1);
         this.taskExecutor = Executors.newScheduledThreadPool(startAmountOfPeople);
-        this.people = generatePeople(startAmountOfPeople);
-
-        LOGGER.info(String.format("Total Threads Generated: %d", startAmountOfPeople));
-
-        for (Person person : people) {
-            taskExecutor.schedule(person, person.getArrivalTime(),  TimeUnit.SECONDS);
-        }
+        this.schedulePeople(startAmountOfPeople, taskExecutor);
 
         // Wait 10 seconds - given the max range a person can take to arrive is 10 seconds.
         try {
@@ -41,8 +40,6 @@ public class Airport {
     }
 
     // TODO: Maybe move this method and generatePeople() to plane class?
-    // For concurrent access, using ThreadLocalRandom instead of Math.random() results
-    // in less contention and, ultimately, better performance.
     @NotNull
     private Person generatePerson() {
         int weight = ThreadLocalRandom.current().nextInt(50, 100 + 1);
@@ -67,5 +64,17 @@ public class Airport {
             people.add(person);
         }
         return people;
+    }
+
+    // Schedule people to arrive at random intervals to the elevator (just a single elevator for now).
+    // Reverse collection due to ScheduledExecutor (Callable) being appended inversely.
+    private void schedulePeople(int startAmountOfPeople, ScheduledExecutorService taskExecutor) {
+        LOGGER.info(String.format("Total Threads Generated: %d", startAmountOfPeople));
+        this.people = generatePeople(startAmountOfPeople);
+        for (Person person : people) {
+            orderPeopleArrived.add(taskExecutor.schedule(person, person.getArrivalTime(), TimeUnit.SECONDS));
+        }
+
+        Collections.reverse(orderPeopleArrived);
     }
 }

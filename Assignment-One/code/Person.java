@@ -3,9 +3,10 @@ package code;
 import jdk.nashorn.internal.objects.annotations.Getter;
 
 import java.sql.Timestamp;
+import java.util.concurrent.Callable;
 import java.util.logging.Logger;
 
-public class Person implements Runnable {
+public class Person implements Callable {
 
     // Logger
     private static final Logger LOGGER = Logger.getLogger(Person.class.getName());
@@ -32,9 +33,10 @@ public class Person implements Runnable {
     }
 
     @Override
-    public void run() {
+    public Person call() {
         Timestamp arrivalTime = new Timestamp(System.currentTimeMillis());
-        LOGGER.info(String.format("Person with ID: {%d} has arrived at %s", this.id, arrivalTime.toString()));
+        LOGGER.info(String.format("Person with ID {%d} has arrived at time {%s}", this.id, arrivalTime.toString()));
+        return this;
     }
 
     @Getter
