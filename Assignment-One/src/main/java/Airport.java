@@ -6,6 +6,8 @@ import java.util.ArrayList;
 import java.util.concurrent.*;
 import java.util.logging.Logger;
 
+// For concurrent access, using ThreadLocalRandom instead of Math.random() results
+// in less contention and, ultimately, better performance.
 public class Airport {
 
     private static final Logger LOGGER = Logger.getLogger(Airport.class.getName());
@@ -15,14 +17,15 @@ public class Airport {
     private Elevator elevatorA;
     private ArrayList<ScheduledFuture> orderPeopleArrived = new ArrayList<ScheduledFuture>();
 
-    // Just initialise 1 elevator for now.
     public Airport() {
         this.elevatorA = new Elevator(400);
     }
 
-    // For concurrent access, using ThreadLocalRandom instead of Math.random() results
-    // in less contention and, ultimately, better performance.
-    public void open() {
+    /**
+     * Start the airport base-functionality.
+     * Allow people in, Allow elevator access, Maximise Concurrency.
+     * */
+    public void initialize() {
         int startAmountOfPeople = ThreadLocalRandom.current().nextInt(1, 4 + 1);
         this.taskExecutor = Executors.newScheduledThreadPool(startAmountOfPeople);
         this.schedulePeople(startAmountOfPeople, taskExecutor);
@@ -37,8 +40,11 @@ public class Airport {
         }
     }
 
-    // The "Set-up" function for accessing the elevator.
-    // Who gets to go first? We tick by 1-second on each cycle.
+    /**
+     * The "Set-up" function for accessing the elevator.
+     * Who gets to go first? We tick by 1-second on each cycle.
+     * @param taskExecutor ScheduledExecutorService object with tasks associated.
+     */
     private void accessElevator(ScheduledExecutorService taskExecutor) throws InterruptedException {
         while(!orderPeopleArrived.isEmpty()) {
             taskExecutor.awaitTermination(1, TimeUnit.SECONDS);
@@ -54,7 +60,10 @@ public class Airport {
         }
     }
 
-    // Individual Calling of the elevator
+    /**
+     * Individual Calling of the elevator.
+     * @param person Person object is placed in a queue of requests.
+     */
     private void callElevator(ScheduledFuture person) {
         try {
             int period = ThreadLocalRandom.current().nextInt(1, 3 + 1);
