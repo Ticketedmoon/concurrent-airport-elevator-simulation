@@ -1,134 +1,154 @@
 package main.java;
 
+import org.apache.commons.lang.NotImplementedException;
+
+import java.util.ArrayDeque;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.Queue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 public class RequestQueue implements BlockingQueue {
 
+    private final Lock lock = new ReentrantLock();
+    private Queue<Object> queue = new ArrayDeque<>();
+    private int size;
+
+    // Unsure about this, need to understand idea better.
+    public void waitForElevator() {
+        lock.lock();
+    }
+
     @Override
     public boolean add(Object o) {
-        return false;
+        this.size++;
+        return queue.add(o);
     }
 
     @Override
     public boolean offer(Object o) {
-        return false;
+        return queue.offer(o);
     }
 
     @Override
     public Object remove() {
-        return null;
+        this.size--;
+        return queue.remove();
     }
 
     @Override
     public Object poll() {
-        return null;
+        return queue.poll();
     }
 
     @Override
     public Object element() {
-        return null;
+        return queue.element();
     }
 
     @Override
     public Object peek() {
-        return null;
+        return queue.peek();
     }
 
     @Override
-    public void put(Object o) throws InterruptedException {
-
+    public void put(Object o) {
+        throw new NotImplementedException();
     }
 
     @Override
-    public boolean offer(Object o, long timeout, TimeUnit unit) throws InterruptedException {
-        return false;
+    public boolean offer(Object o, long timeout, TimeUnit unit) {
+        throw new NotImplementedException();
     }
 
     @Override
-    public Object take() throws InterruptedException {
-        return null;
+    public Object take() {
+        throw new NotImplementedException();
     }
 
     @Override
-    public Object poll(long timeout, TimeUnit unit) throws InterruptedException {
-        return null;
+    public Object poll(long timeout, TimeUnit unit) {
+        throw new NotImplementedException();
     }
 
     @Override
     public int remainingCapacity() {
-        return 0;
+        throw new NotImplementedException();
     }
 
     @Override
     public boolean remove(Object o) {
-        return false;
+        throw new NotImplementedException();
     }
 
     @Override
     public boolean addAll(Collection c) {
-        return false;
+        throw new NotImplementedException();
     }
 
     @Override
     public void clear() {
-
+        while(size() > 0) {
+            this.remove();
+        }
     }
 
     @Override
     public boolean retainAll(Collection c) {
-        return false;
+        throw new NotImplementedException();
     }
 
     @Override
     public boolean removeAll(Collection c) {
-        return false;
+        throw new NotImplementedException();
     }
 
     @Override
     public boolean containsAll(Collection c) {
-        return false;
+        throw new NotImplementedException();
+
     }
 
     @Override
     public int size() {
-        return 0;
+        return size;
     }
 
     @Override
     public boolean isEmpty() {
-        return false;
+        return size == 0;
     }
 
     @Override
     public boolean contains(Object o) {
-        return false;
+        throw new NotImplementedException();
     }
 
     @Override
     public Iterator iterator() {
-        return null;
+        throw new NotImplementedException();
     }
 
     @Override
     public Object[] toArray() {
-        return new Object[0];
+        throw new NotImplementedException();
     }
 
     @Override
     public Object[] toArray(Object[] a) {
-        return new Object[0];
+        throw new NotImplementedException();
     }
 
     @Override
     public int drainTo(Collection c) {
-        return 0;
+        throw new NotImplementedException();
     }
 
     @Override
     public int drainTo(Collection c, int maxElements) {
-        return 0;
+        throw new NotImplementedException();
     }
 }

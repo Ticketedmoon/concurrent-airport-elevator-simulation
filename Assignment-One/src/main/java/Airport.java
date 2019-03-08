@@ -3,7 +3,6 @@ package main.java;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.concurrent.*;
 import java.util.logging.Logger;
 
@@ -24,14 +23,13 @@ public class Airport {
     // For concurrent access, using ThreadLocalRandom instead of Math.random() results
     // in less contention and, ultimately, better performance.
     public void open() {
-        int startAmountOfPeople = ThreadLocalRandom.current().nextInt(1, 10 + 1);
+        int startAmountOfPeople = ThreadLocalRandom.current().nextInt(1, 4 + 1);
         this.taskExecutor = Executors.newScheduledThreadPool(startAmountOfPeople);
         this.schedulePeople(startAmountOfPeople, taskExecutor);
 
-        // Wait 10 seconds - given the max range a person can take to arrive is 10 seconds.
         try {
-           taskExecutor.awaitTermination(10, TimeUnit.SECONDS);
-        } catch (InterruptedException e) {
+            accessElevator(taskExecutor);
+        } catch(InterruptedException e) {
             e.printStackTrace();
         }
         finally {
@@ -39,16 +37,46 @@ public class Airport {
         }
     }
 
+    // The "Set-up" function for accessing the elevator.
+    // Who gets to go first? We tick by 1-second on each cycle.
+    private void accessElevator(ScheduledExecutorService taskExecutor) throws InterruptedException {
+        while(!orderPeopleArrived.isEmpty()) {
+            taskExecutor.awaitTermination(1, TimeUnit.SECONDS);
+            for (int i = 0; i < orderPeopleArrived.size(); i++) {
+                orderPeopleArrived.removeIf(n -> {
+                    if (n.isDone()) {
+                        callElevator(n);
+                        return true;
+                    }
+                    return false;
+                });
+            }
+        }
+    }
+
+    // Individual Calling of the elevator
+    private void callElevator(ScheduledFuture person) {
+        try {
+            int period = ThreadLocalRandom.current().nextInt(1, 3 + 1);
+            taskExecutor.awaitTermination(period, TimeUnit.SECONDS);
+            Person currentPerson = (Person) person.get();
+            LOGGER.info(String.format("%s has requested the elevator at floor {%s} with destination floor {%s}",
+                    currentPerson, currentPerson.getArrivalFloor(), currentPerson.getDestFloor()));
+            elevatorA.request(currentPerson);
+        } catch (InterruptedException | ExecutionException e) {
+            e.printStackTrace();
+        }
+    }
+
     // TODO: Maybe move this method and generatePeople() to plane class?
+    // TODO: destFloor must be different to arrival floor.
     @NotNull
     private Person generatePerson() {
         int weight = ThreadLocalRandom.current().nextInt(50, 100 + 1);
         int luggageWeight = ThreadLocalRandom.current().nextInt(5, 30 + 1);
         int arrivalTime =  ThreadLocalRandom.current().nextInt(1, 10 + 1);
         int arrivalFloor =  ThreadLocalRandom.current().nextInt(1, 10 + 1);
-        // TODO: destFloor must be different to arrival floor.
         int destFloor =  ThreadLocalRandom.current().nextInt(1, 10 + 1);
-
         return new Person(weight, luggageWeight, arrivalTime, arrivalFloor, destFloor);
     }
 
@@ -78,6 +106,5 @@ public class Airport {
         for (Person person : people) {
             orderPeopleArrived.add(taskExecutor.schedule(person, person.getArrivalTime(), TimeUnit.SECONDS));
         }
-        Collections.reverse(orderPeopleArrived);
     }
 }

@@ -33,7 +33,7 @@ public class Person implements Callable {
     @Override
     public Person call() {
         Timestamp arrivalTime = new Timestamp(System.currentTimeMillis());
-        LOGGER.info(String.format("Person with ID {%d} has arrived at time {%s}", this.id, arrivalTime.toString()));
+        LOGGER.info(String.format("Person with ID {%d} has arrived inside the Airport at time {%s}", this.id, arrivalTime.toString()));
         return this;
     }
 
@@ -41,8 +41,16 @@ public class Person implements Callable {
         return this.arrivalTime;
     }
 
+    public int getArrivalFloor() {
+        return this.arrivalFloor;
+    }
+
+    public int getDestFloor() {
+        return this.destFloor;
+    }
+
     @Override
     public String toString() {
-        return String.format("Person ID: {%d}", this.id);
+        return String.format("Person ID {%d}", this.id);
     }
 }

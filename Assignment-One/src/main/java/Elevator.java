@@ -1,6 +1,7 @@
 package main.java;
 
 import java.util.ArrayList;
+import java.util.logging.Logger;
 
 /** Optimise Marks:
   * Any form of creativity that you feel like putting in that will add interest to the marking of the project.
@@ -11,6 +12,8 @@ import java.util.ArrayList;
   * 5. Random events such as faulty lifts etc... */
 
 public class Elevator {
+
+    private static final Logger LOGGER = Logger.getLogger(Elevator.class.getName());
 
     // Static elevatorID such that we can increment the class variable
     private static int elevatorID = 0;
@@ -46,6 +49,17 @@ public class Elevator {
         this.requestsForElevator = new RequestQueue();
         this.elevatorID = ++Elevator.elevatorID;
         this.outOfOrder = false;
+    }
+
+    // Add person details (Arrival floor
+    public void request(Person person) {
+        requestsForElevator.add(person);
+        LOGGER.info(String.format("Elevator with ID [%d] has been called by [%s]", Elevator.elevatorID, person));
+    }
+
+    @Override
+    public String toString() {
+        return String.format("Elevator with ID %d", Elevator.elevatorID);
     }
 
 }
