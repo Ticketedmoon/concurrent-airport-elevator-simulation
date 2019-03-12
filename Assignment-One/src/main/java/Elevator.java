@@ -1,6 +1,8 @@
 package main.java;
 
 import java.util.ArrayList;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Logger;
 
 /** Optimise Marks:
@@ -28,13 +30,18 @@ import java.util.logging.Logger;
  */
 public class Elevator extends Thread {
 
+    // Logger
     private static final Logger LOGGER = Logger.getLogger(Elevator.class.getName());
+
+    // Concurrency Control Mechanisms
+    private final ReentrantLock lock;
+    private final Condition condition;
 
     // Static elevatorID such that we can increment the class variable
     private static int elevatorID = 0;
 
     // Static and Switch variables
-    private String direction = "up";
+    private String direction;
 
     // Start floor is 0 when elevators are created
     private int currentFloor = 0;
@@ -56,7 +63,7 @@ public class Elevator extends Thread {
 
     /* Constructor takes maxWeightCapacity as we might be able to have different elevators
      * with different weights, like a freight elevator or something */
-    public Elevator(int maxWeightCapacity) {
+    public Elevator(int maxWeightCapacity, ReentrantLock lock, Condition condition) {
         this.direction = "up";
         this.currentFloor = 0;
         this.maxWeightCapacity = maxWeightCapacity;
@@ -64,6 +71,8 @@ public class Elevator extends Thread {
         this.requestsForElevator = new RequestQueue();
         this.elevatorID = ++Elevator.elevatorID;
         this.outOfOrder = false;
+        this.lock = lock;
+        this.condition = condition;
     }
 
     /**
@@ -91,12 +100,75 @@ public class Elevator extends Thread {
         while(true) {
             try {
                 Thread.sleep(1000);
+                if (!requestsForElevator.isEmpty()) {
+                    Person person = (Person) requestsForElevator.remove();
+                    goToArrivalFloor(person);
+                    goToDestinationFloor(person);
+                }
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
-            if (!requestsForElevator.isEmpty()) {
-                System.out.println(requestsForElevator.remove());
-            }
         }
+    }
+
+    private void setDirection(int floor) {
+        if (floor > currentFloor)
+            direction = "up";
+        else
+            direction = "down";
+    }
+
+    private void allowOnPassengers(Person person) {
+        // If the elevators current weight + persons weight is less than max, let them on.
+        if (currentWeight + person.getWeight() < maxWeightCapacity) {
+            this.currentPassengers.add(person);
+            currentWeight += person.getWeight();
+            LOGGER.info("Elevator Passengers: " + this.currentPassengers.toString());
+            LOGGER.info("Elevator Weight: " + this.currentWeight + "kgs.");
+        }
+        else {
+            LOGGER.warning("Elevator weight capacity exceeded! Removing most recent passenger");
+        }
+    }
+
+    private void removePassengers(Person person) {
+        lock.lock();
+        try {
+            this.currentPassengers.remove(person);
+            this.currentWeight -= person.getWeight();
+            condition.signal();
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    private void goToArrivalFloor(Person person) throws InterruptedException {
+        // Update direction to travel to arrival floor.
+        setDirection(person.getArrivalFloor());
+        while (currentFloor != person.getArrivalFloor()) {
+            moveElevator();
+        }
+        allowOnPassengers(person);
+    }
+
+    private void goToDestinationFloor(Person person) throws InterruptedException {
+        // Update direction to travel to destination floor.
+        setDirection((person.getDestFloor()));
+        while (currentFloor != person.getDestFloor()) {
+            moveElevator();
+        }
+        removePassengers(person);
+    }
+
+    private void moveElevator() throws InterruptedException {
+        // We must traverse to the correct floor.
+        // Elevator can move between floors at 0.5 seconds? for now at least.
+        if (direction.equals("down"))
+            currentFloor--;
+        else
+            currentFloor++;
+
+        LOGGER.info(String.format("Elevator with ID {%d} now on floor {%d}", this.getElevatorID(), this.currentFloor));
+        Thread.sleep(5000);
     }
 }

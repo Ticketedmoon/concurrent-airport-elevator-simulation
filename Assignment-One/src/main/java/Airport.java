@@ -3,7 +3,12 @@ package main.java;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
-import java.util.concurrent.*;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Logger;
 
 // For concurrent access, using ThreadLocalRandom instead of Math.random() results
@@ -12,15 +17,18 @@ public class Airport {
 
     private static final Logger LOGGER = Logger.getLogger(Airport.class.getName());
 
+    // Concurrency Control Mechanisms
+    private final ReentrantLock lock = new ReentrantLock();
+    private final Condition condition = lock.newCondition();
+
     private ScheduledExecutorService person_executor;
     private ArrayList<Person> people;
-    private Elevator elevator;
-    private ArrayList<ScheduledFuture> orderPeopleArrived = new ArrayList<ScheduledFuture>();
+    private ArrayList<Elevator> elevators = new ArrayList<>();
 
     public Airport() {
         // Start elevator once airport is initialised.
-        elevator = new Elevator(400);
-        elevator.start();
+        elevators.add(new Elevator(400, lock, condition));
+        elevators.get(0).start();
     }
 
     /**
@@ -28,56 +36,9 @@ public class Airport {
      * Allow people in, Allow elevator access, Maximise Concurrency.
      * */
     public void initialize() {
-        int startAmountOfPeople = ThreadLocalRandom.current().nextInt(1, 4 + 1);
+        int startAmountOfPeople = ThreadLocalRandom.current().nextInt(1, 3 + 1);
         this.person_executor = Executors.newScheduledThreadPool(startAmountOfPeople);
         this.schedulePeople(startAmountOfPeople, person_executor);
-
-        try {
-            accessElevator(person_executor);
-        } catch(InterruptedException e) {
-            e.printStackTrace();
-        }
-        finally {
-            person_executor.shutdownNow();
-        }
-    }
-
-    /**
-     * The "Set-up" function for accessing the elevator.
-     * Who gets to go first? We tick by 1-second on each cycle.
-     * @param taskExecutor ScheduledExecutorService object with tasks associated.
-     */
-    private void accessElevator(ScheduledExecutorService taskExecutor) throws InterruptedException {
-        while(!orderPeopleArrived.isEmpty()) {
-            taskExecutor.awaitTermination(1, TimeUnit.SECONDS);
-            for (int i = 0; i < orderPeopleArrived.size(); i++) {
-                orderPeopleArrived.removeIf(n -> {
-                    if (n.isDone()) {
-                        callElevator(n);
-                        return true;
-                    }
-                    return false;
-                });
-            }
-        }
-    }
-
-    /**
-     * Individual Calling of the elevator.
-     * @param person Person object is placed in a queue of requests.
-     */
-    private void callElevator(ScheduledFuture person) {
-        try {
-            int period = ThreadLocalRandom.current().nextInt(1, 3 + 1);
-            person_executor.awaitTermination(period, TimeUnit.SECONDS);
-            Person currentPerson = (Person) person.get();
-            LOGGER.info(String.format("%s has requested the elevator[%d] at floor {%s} with destination floor {%s}",
-                    currentPerson, elevator.getElevatorID(), currentPerson.getArrivalFloor(), currentPerson.getDestFloor()));
-            // For name just focus on 1 elevator working, we can get more later.
-            elevator.queue(currentPerson);
-        } catch (InterruptedException | ExecutionException e) {
-            e.printStackTrace();
-        }
     }
 
     // TODO: Maybe move this method and generatePeople() to plane class?
@@ -89,7 +50,15 @@ public class Airport {
         int arrivalTime =  ThreadLocalRandom.current().nextInt(1, 10 + 1);
         int arrivalFloor =  ThreadLocalRandom.current().nextInt(1, 10 + 1);
         int destFloor =  ThreadLocalRandom.current().nextInt(1, 10 + 1);
-        return new Person(weight, luggageWeight, arrivalTime, arrivalFloor, destFloor);
+        return new Person(weight, luggageWeight, arrivalTime, arrivalFloor, destFloor, getElevators(), lock, condition);
+    }
+
+    /**
+     * Get first available elevator
+     */
+    public ArrayList<Elevator> getElevators() {
+        // For now just return 1 elevator.
+        return this.elevators;
     }
 
     /**
@@ -115,7 +84,7 @@ public class Airport {
         LOGGER.info(String.format("Total Threads Generated: %d", startAmountOfPeople));
         this.people = generatePeople(startAmountOfPeople);
         for (Person person : people) {
-            orderPeopleArrived.add(taskExecutor.schedule(person, person.getArrivalTime(), TimeUnit.SECONDS));
+            taskExecutor.schedule(person, person.getArrivalTime(), TimeUnit.SECONDS);
         }
     }
 }

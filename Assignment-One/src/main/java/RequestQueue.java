@@ -8,19 +8,11 @@ import java.util.Iterator;
 import java.util.Queue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 
 public class RequestQueue implements BlockingQueue {
 
-    private final Lock lock = new ReentrantLock();
     private Queue<Object> queue = new ArrayDeque<>();
     private int size;
-
-    // Unsure about this, need to understand idea better.
-    public void waitForElevator() {
-        lock.lock();
-    }
 
     @Override
     public boolean add(Object o) {
