@@ -52,7 +52,7 @@ public class Elevator {
     }
 
     // Add person details (Arrival floor
-    public void request(Person person) {
+    public void queue(Person person) {
         requestsForElevator.add(person);
         LOGGER.info(String.format("Elevator with ID [%d] has been called by [%s]", Elevator.elevatorID, person));
     }

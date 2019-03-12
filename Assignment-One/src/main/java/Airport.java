@@ -71,7 +71,7 @@ public class Airport {
             Person currentPerson = (Person) person.get();
             LOGGER.info(String.format("%s has requested the elevator at floor {%s} with destination floor {%s}",
                     currentPerson, currentPerson.getArrivalFloor(), currentPerson.getDestFloor()));
-            elevatorA.request(currentPerson);
+            elevatorA.queue(currentPerson);
         } catch (InterruptedException | ExecutionException e) {
             e.printStackTrace();
         }
@@ -105,7 +105,6 @@ public class Airport {
 
     /**
      * Schedule people to arrive at random intervals to the elevator (just a single elevator for now).
-     * Reverse collection due to ScheduledExecutor (Callable) being appended inversely.
      * @param startAmountOfPeople Total Amount of People eventually to arrive at the elevator.
      * @param taskExecutor The scheduledExecutorService with size, S.
      */
