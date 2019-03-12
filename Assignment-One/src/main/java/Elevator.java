@@ -26,7 +26,7 @@ import java.util.logging.Logger;
  *
  * (Any more conditions be sure to include here)
  */
-public class Elevator {
+public class Elevator extends Thread {
 
     private static final Logger LOGGER = Logger.getLogger(Elevator.class.getName());
 
@@ -73,7 +73,10 @@ public class Elevator {
      */
     public void queue(Person person) {
         requestsForElevator.add(person);
-        LOGGER.info(String.format("Elevator with ID [%d] has been called by [%s]", Elevator.elevatorID, person));
+    }
+
+    public int getElevatorID() {
+        return elevatorID;
     }
 
     @Override
@@ -81,4 +84,19 @@ public class Elevator {
         return String.format("Elevator with ID %d", Elevator.elevatorID);
     }
 
+    @Override
+    public void run() {
+        // Run this method forever?
+        // Maybe change this from Thread to executor service? less verbose.
+        while(true) {
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            if (!requestsForElevator.isEmpty()) {
+                System.out.println(requestsForElevator.remove());
+            }
+        }
+    }
 }

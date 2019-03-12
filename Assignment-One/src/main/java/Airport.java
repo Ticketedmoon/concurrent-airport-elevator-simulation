@@ -12,13 +12,15 @@ public class Airport {
 
     private static final Logger LOGGER = Logger.getLogger(Airport.class.getName());
 
-    private ScheduledExecutorService taskExecutor;
+    private ScheduledExecutorService person_executor;
     private ArrayList<Person> people;
-    private Elevator elevatorA;
+    private Elevator elevator;
     private ArrayList<ScheduledFuture> orderPeopleArrived = new ArrayList<ScheduledFuture>();
 
     public Airport() {
-        this.elevatorA = new Elevator(400);
+        // Start elevator once airport is initialised.
+        elevator = new Elevator(400);
+        elevator.start();
     }
 
     /**
@@ -27,16 +29,16 @@ public class Airport {
      * */
     public void initialize() {
         int startAmountOfPeople = ThreadLocalRandom.current().nextInt(1, 4 + 1);
-        this.taskExecutor = Executors.newScheduledThreadPool(startAmountOfPeople);
-        this.schedulePeople(startAmountOfPeople, taskExecutor);
+        this.person_executor = Executors.newScheduledThreadPool(startAmountOfPeople);
+        this.schedulePeople(startAmountOfPeople, person_executor);
 
         try {
-            accessElevator(taskExecutor);
+            accessElevator(person_executor);
         } catch(InterruptedException e) {
             e.printStackTrace();
         }
         finally {
-            taskExecutor.shutdownNow();
+            person_executor.shutdownNow();
         }
     }
 
@@ -67,11 +69,12 @@ public class Airport {
     private void callElevator(ScheduledFuture person) {
         try {
             int period = ThreadLocalRandom.current().nextInt(1, 3 + 1);
-            taskExecutor.awaitTermination(period, TimeUnit.SECONDS);
+            person_executor.awaitTermination(period, TimeUnit.SECONDS);
             Person currentPerson = (Person) person.get();
-            LOGGER.info(String.format("%s has requested the elevator at floor {%s} with destination floor {%s}",
-                    currentPerson, currentPerson.getArrivalFloor(), currentPerson.getDestFloor()));
-            elevatorA.queue(currentPerson);
+            LOGGER.info(String.format("%s has requested the elevator[%d] at floor {%s} with destination floor {%s}",
+                    currentPerson, elevator.getElevatorID(), currentPerson.getArrivalFloor(), currentPerson.getDestFloor()));
+            // For name just focus on 1 elevator working, we can get more later.
+            elevator.queue(currentPerson);
         } catch (InterruptedException | ExecutionException e) {
             e.printStackTrace();
         }

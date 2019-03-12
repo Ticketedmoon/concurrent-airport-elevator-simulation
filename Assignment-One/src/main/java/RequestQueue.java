@@ -35,8 +35,11 @@ public class RequestQueue implements BlockingQueue {
 
     @Override
     public Object remove() {
-        this.size--;
-        return queue.remove();
+        if (size > 0) {
+            size--;
+            return queue.remove();
+        }
+        return null;
     }
 
     @Override
