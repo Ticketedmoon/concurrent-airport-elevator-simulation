@@ -7,7 +7,7 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Logger;
 
-public class Person extends Thread {
+public class Person implements Runnable {
 
     // Logger
     private static final Logger LOGGER = Logger.getLogger(Person.class.getName());
@@ -49,7 +49,6 @@ public class Person extends Thread {
         Timestamp airportArrivalTime = new Timestamp(System.currentTimeMillis());
         LOGGER.info(String.format("Person with ID {%d} has arrived at the airport at time {%s}", this.id, airportArrivalTime.toString()));
         requestElevator();
-
     }
 
     /**
@@ -68,13 +67,8 @@ public class Person extends Thread {
             // For name just focus on 1 elevator working, we can get more later.
             this.elevators.get(0).queue(this);
             condition.await();
-
-            try {
-                LOGGER.info(String.format("Person with ID {%d} has arrived at their destination floor " +
-                        "{%d} and has left the elevator.", this.id, this.destFloor));
-            } finally {
-                lock.unlock();
-            }
+            LOGGER.info(String.format("Person with ID {%d} has arrived at their destination floor " +
+                    "{%d} and has left the elevator.", this.id, this.destFloor));
         } catch (InterruptedException e) {
             e.printStackTrace();
         }

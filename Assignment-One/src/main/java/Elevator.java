@@ -69,14 +69,14 @@ public class Elevator implements Runnable {
     public Elevator(int maxWeightCapacity, int amountOfPeople, ReentrantLock lock, Condition condition) {
         this.direction = "up";
         this.currentFloor = 0;
+        this.outOfOrder = false;
         this.maxWeightCapacity = maxWeightCapacity;
         this.currentPassengers = new ArrayList<>();
         this.requestsForElevator = new RequestQueue();
         this.elevatorID = ++Elevator.elevatorID;
-        this.outOfOrder = false;
         this.amountOfPeople = amountOfPeople;
-        this.lock = lock;
         this.condition = condition;
+        this.lock = lock;
     }
 
     /**
@@ -113,7 +113,6 @@ public class Elevator implements Runnable {
                 e.printStackTrace();
             }
         }
-        LOGGER.info(String.format("Elevator with ID {%d} Ending Gracefully.", getElevatorID()));
     }
 
     private void setDirection(int floor) {
