@@ -28,7 +28,11 @@ public class Airport {
     public Airport() {
         // Start elevator once airport is initialised.
         elevators.add(new Elevator(400, lock, condition));
-        elevators.get(0).start();
+        //TODO this is a test for runnable. Seems to be fine.
+        // For multiple elevators are we better off using a executor pool as well?
+
+        Thread thread = new Thread(elevators.get(0));
+        thread.start();
     }
 
     /**
@@ -90,7 +94,7 @@ public class Airport {
      * @param taskExecutor The scheduledExecutorService with size, S.
      */
     private void schedulePeople(int startAmountOfPeople, ScheduledExecutorService taskExecutor) {
-        LOGGER.info(String.format("Total Threads Generated: %d", startAmountOfPeople));
+        LOGGER.info(String.format("Total People Threads Generated: %d", startAmountOfPeople));
         this.people = generatePeople(startAmountOfPeople);
         for (Person person : people) {
             taskExecutor.schedule(person, person.getArrivalTime(), TimeUnit.SECONDS);

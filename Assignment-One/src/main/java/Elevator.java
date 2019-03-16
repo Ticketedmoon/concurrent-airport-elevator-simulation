@@ -28,7 +28,7 @@ import java.util.logging.Logger;
  *
  * (Any more conditions be sure to include here)
  */
-public class Elevator extends Thread {
+public class Elevator implements Runnable {
 
     // Logger
     private static final Logger LOGGER = Logger.getLogger(Elevator.class.getName());
@@ -126,7 +126,7 @@ public class Elevator extends Thread {
         if (currentElevatorWeight + person.getPassengerPlusLuggageWeight() < maxWeightCapacity) {
             this.currentPassengers.add(person);
             currentElevatorWeight += person.getPassengerPlusLuggageWeight();
-            LOGGER.info(String.format(person.toString() + " successfully got on elevator and requests floor {%d}", person.getDestFloor()));
+            LOGGER.info(String.format(person.toString() + " successfully got on elevator " + this.elevatorID +" at floor " + this.currentFloor + " and requests floor {%d}", person.getDestFloor()));
             LOGGER.info("Elevator Passengers: " + this.currentPassengers.toString());
             LOGGER.info("Elevator Weight: " + this.currentElevatorWeight + "kgs.");
         }
@@ -159,6 +159,7 @@ public class Elevator extends Thread {
 
     private void goToDestinationFloor(Person person) throws InterruptedException {
         // Update direction to travel to destination floor.
+        //TODO blocked by people getting on?
         setDirection((person.getDestFloor()));
         while (currentFloor != person.getDestFloor()) {
             moveElevator();

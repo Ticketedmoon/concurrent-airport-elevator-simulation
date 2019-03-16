@@ -78,6 +78,9 @@ public class Person extends Thread {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
+        finally {
+            lock.unlock();
+        }
     }
 
     public long getArrivalTime() {
@@ -92,9 +95,7 @@ public class Person extends Thread {
         return this.destFloor;
     }
 
-    public int getWeight() {
-        return this.weight;
-    }
+    public int getWeight() { return this.weight; }
 
     public int getLuggageWeight() {return this.luggage.getWeight();}
 
