@@ -50,7 +50,7 @@ public class Elevator extends Thread {
     private final int maxWeightCapacity;
 
     // The weight of all the people currently on the elevator.
-    private int currentWeight;
+    private int currentElevatorWeight;
 
     // Data structures for concurrency
     private ArrayList<Person> currentPassengers;
@@ -120,11 +120,11 @@ public class Elevator extends Thread {
 
     private void allowOnPassengers(Person person) {
         // If the elevators current weight + persons weight is less than max, let them on.
-        if (currentWeight + person.getWeight() < maxWeightCapacity) {
+        if (currentElevatorWeight + person.getPassengerPlusLuggageWeight() < maxWeightCapacity) {
             this.currentPassengers.add(person);
-            currentWeight += person.getWeight();
+            currentElevatorWeight += person.getPassengerPlusLuggageWeight();
             LOGGER.info("Elevator Passengers: " + this.currentPassengers.toString());
-            LOGGER.info("Elevator Weight: " + this.currentWeight + "kgs.");
+            LOGGER.info("Elevator Weight: " + this.currentElevatorWeight + "kgs.");
         }
         else {
             LOGGER.warning("Elevator weight capacity exceeded! Removing most recent passenger");
@@ -135,7 +135,7 @@ public class Elevator extends Thread {
         lock.lock();
         try {
             this.currentPassengers.remove(person);
-            this.currentWeight -= person.getWeight();
+            this.currentElevatorWeight -= person.getWeight();
             condition.signal();
         } finally {
             lock.unlock();
