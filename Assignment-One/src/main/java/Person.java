@@ -62,7 +62,7 @@ public class Person extends Thread {
             Thread.sleep(period * 1000);
 
             Timestamp requestTime = new Timestamp(System.currentTimeMillis());
-            LOGGER.info(String.format("%s has requested the elevator[%d] at floor {%s} with destination floor {%s} at time {%s}",
+            LOGGER.info(String.format("%s has requested the elevator[%d] to floor {%s} with destination floor {%s} at time {%s}",
                         this, this.elevators.get(0).getElevatorID(), this.getArrivalFloor(), this.getDestFloor(), requestTime.toString()));
 
             // For name just focus on 1 elevator working, we can get more later.
