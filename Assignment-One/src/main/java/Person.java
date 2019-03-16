@@ -97,9 +97,9 @@ public class Person extends Thread {
 
     public int getWeight() { return this.weight; }
 
-    public int getLuggageWeight() {return this.luggage.getWeight();}
+    public int getLuggageWeight() { return this.luggage.getWeight(); }
 
-    public int getPassengerPlusLuggageWeight() {return this.getWeight() + this.getLuggageWeight();}
+    public int getPassengerPlusLuggageWeight() { return this.getWeight() + this.getLuggageWeight(); }
 
     @Override
     public String toString() {

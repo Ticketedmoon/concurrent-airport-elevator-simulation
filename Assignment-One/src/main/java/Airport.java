@@ -1,7 +1,5 @@
 package main.java;
 
-import org.jetbrains.annotations.NotNull;
-
 import java.util.ArrayList;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -25,12 +23,15 @@ public class Airport {
     private ArrayList<Person> people;
     private ArrayList<Elevator> elevators = new ArrayList<>();
 
+    private int startAmountOfPeople;
+
     public Airport() {
-        // Start elevator once airport is initialised.
-        elevators.add(new Elevator(400, lock, condition));
+        // Move the generation of people up here so we can exit program gracefully.
+        startAmountOfPeople = ThreadLocalRandom.current().nextInt(1, 3 + 1);
+        elevators.add(new Elevator(400, startAmountOfPeople, lock, condition));
+
         //TODO this is a test for runnable. Seems to be fine.
         // For multiple elevators are we better off using a executor pool as well?
-
         Thread thread = new Thread(elevators.get(0));
         thread.start();
     }
@@ -40,14 +41,10 @@ public class Airport {
      * Allow people in, Allow elevator access, Maximise Concurrency.
      * */
     public void initialize() {
-        int startAmountOfPeople = ThreadLocalRandom.current().nextInt(1, 3 + 1);
         this.person_executor = Executors.newScheduledThreadPool(startAmountOfPeople);
         this.schedulePeople(startAmountOfPeople, person_executor);
     }
 
-    // TODO: Maybe move this method and generatePeople() to plane class?
-    // TODO: destFloor must be different to arrival floor.
-    @NotNull
     private Person generatePerson() {
         int weight = ThreadLocalRandom.current().nextInt(50, 100 + 1);
         int luggageWeight = ThreadLocalRandom.current().nextInt(5, 30 + 1);
@@ -66,6 +63,7 @@ public class Airport {
         }
         return destFloor;
     }
+
     /**
      * Get first available elevator
      */
