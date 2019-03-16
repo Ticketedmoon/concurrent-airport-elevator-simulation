@@ -112,6 +112,7 @@ public class Elevator extends Thread {
     }
 
     private void setDirection(int floor) {
+        //TODO sync needed?
         if (floor > currentFloor)
             direction = "up";
         else
@@ -120,14 +121,19 @@ public class Elevator extends Thread {
 
     private void allowOnPassengers(Person person) {
         // If the elevators current weight + persons weight is less than max, let them on.
+        //TODO if we allow multiple people on a floor (to get on the lift) then we must lock this.
+        //TODO the below must also happen >AFTER< people get off on this current floor (IE people getting off on their dest floor).
         if (currentElevatorWeight + person.getPassengerPlusLuggageWeight() < maxWeightCapacity) {
             this.currentPassengers.add(person);
             currentElevatorWeight += person.getPassengerPlusLuggageWeight();
+            LOGGER.info(String.format(person.toString() + " successfully got on elevator and requests floor {%d}", person.getDestFloor()));
             LOGGER.info("Elevator Passengers: " + this.currentPassengers.toString());
             LOGGER.info("Elevator Weight: " + this.currentElevatorWeight + "kgs.");
         }
         else {
-            LOGGER.warning("Elevator weight capacity exceeded! Removing most recent passenger");
+            //TODO When implemented print passenger id and possibly weight of them and luggage?
+            //TODO Need to gracefully handle their request being denied and make sure that it does in fact >EVENTUALLY< get sorted
+            LOGGER.warning("Elevator weight capacity exceeded! Removing " + person.toString());
         }
     }
 
@@ -168,7 +174,7 @@ public class Elevator extends Thread {
         else
             currentFloor++;
 
-        LOGGER.info(String.format("Elevator with ID {%d} now on floor {%d}", this.getElevatorID(), this.currentFloor));
+        LOGGER.info(String.format("Elevator with ID {%d} now on floor {%d} moving %s", this.getElevatorID(), this.currentFloor, this.direction));
         Thread.sleep(5000);
     }
 }
