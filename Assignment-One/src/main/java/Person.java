@@ -96,6 +96,10 @@ public class Person extends Thread {
         return this.weight;
     }
 
+    public int getLuggageWeight() {return this.luggage.getWeight();}
+
+    public int getPassengerPlusLuggageWeight() {return this.getWeight() + this.getLuggageWeight();}
+
     @Override
     public String toString() {
         return String.format("Person with ID {%d}", this.id);
