@@ -1,7 +1,5 @@
 package main.java;
 
-import org.apache.commons.lang.NotImplementedException;
-
 import java.util.ArrayDeque;
 import java.util.Collection;
 import java.util.Iterator;
@@ -51,37 +49,37 @@ public class RequestQueue implements BlockingQueue {
 
     @Override
     public void put(Object o) {
-        throw new NotImplementedException();
+
     }
 
     @Override
     public boolean offer(Object o, long timeout, TimeUnit unit) {
-        throw new NotImplementedException();
+        return false;
     }
 
     @Override
     public Object take() {
-        throw new NotImplementedException();
+        return null;
     }
 
     @Override
     public Object poll(long timeout, TimeUnit unit) {
-        throw new NotImplementedException();
+        return null;
     }
 
     @Override
     public int remainingCapacity() {
-        throw new NotImplementedException();
+        return 0;
     }
 
     @Override
     public boolean remove(Object o) {
-        throw new NotImplementedException();
+        return false;
     }
 
     @Override
     public boolean addAll(Collection c) {
-        throw new NotImplementedException();
+        return false;
     }
 
     @Override
@@ -93,18 +91,17 @@ public class RequestQueue implements BlockingQueue {
 
     @Override
     public boolean retainAll(Collection c) {
-        throw new NotImplementedException();
+        return false;
     }
 
     @Override
     public boolean removeAll(Collection c) {
-        throw new NotImplementedException();
+        return false;
     }
 
     @Override
     public boolean containsAll(Collection c) {
-        throw new NotImplementedException();
-
+        return false;
     }
 
     @Override
@@ -119,31 +116,31 @@ public class RequestQueue implements BlockingQueue {
 
     @Override
     public boolean contains(Object o) {
-        throw new NotImplementedException();
+        return false;
     }
 
     @Override
     public Iterator iterator() {
-        throw new NotImplementedException();
+        return null;
     }
 
     @Override
     public Object[] toArray() {
-        throw new NotImplementedException();
+        return null;
     }
 
     @Override
     public Object[] toArray(Object[] a) {
-        throw new NotImplementedException();
+        return null;
     }
 
     @Override
     public int drainTo(Collection c) {
-        throw new NotImplementedException();
+        return 0;
     }
 
     @Override
     public int drainTo(Collection c, int maxElements) {
-        throw new NotImplementedException();
+        return 0;
     }
 }

@@ -1,12 +1,7 @@
 package main.java;
 
-import org.jetbrains.annotations.NotNull;
-
 import java.util.ArrayList;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ThreadLocalRandom;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Logger;
@@ -15,24 +10,29 @@ import java.util.logging.Logger;
 // in less contention and, ultimately, better performance.
 public class Airport {
 
+    // Logger
     private static final Logger LOGGER = Logger.getLogger(Airport.class.getName());
 
     // Concurrency Control Mechanisms
     private final ReentrantLock lock = new ReentrantLock();
     private final Condition condition = lock.newCondition();
 
+    // Spawn X people for now.
     private ScheduledExecutorService person_executor;
+
+    // Spawn 1 elevator for now.
+    private ExecutorService elevator_executor;
+
     private ArrayList<Person> people;
-    private ArrayList<Elevator> elevators = new ArrayList<>();
+    private ArrayList<Elevator> elevators;
+    private int startAmountOfPeople;
 
     public Airport() {
-        // Start elevator once airport is initialised.
-        elevators.add(new Elevator(400, lock, condition));
-        //TODO this is a test for runnable. Seems to be fine.
-        // For multiple elevators are we better off using a executor pool as well?
-
-        Thread thread = new Thread(elevators.get(0));
-        thread.start();
+        // Move the generation of people up here so we can exit program gracefully.
+        startAmountOfPeople = ThreadLocalRandom.current().nextInt(1, 3 + 1);
+        person_executor = Executors.newScheduledThreadPool(startAmountOfPeople);
+        elevator_executor = Executors.newFixedThreadPool(1);
+        elevators = new ArrayList<>();
     }
 
     /**
@@ -40,14 +40,28 @@ public class Airport {
      * Allow people in, Allow elevator access, Maximise Concurrency.
      * */
     public void initialize() {
-        int startAmountOfPeople = ThreadLocalRandom.current().nextInt(1, 3 + 1);
-        this.person_executor = Executors.newScheduledThreadPool(startAmountOfPeople);
+        Elevator elevatorA = new Elevator(400, startAmountOfPeople, lock, condition);
+        elevators.add(elevatorA);
+        Future elevator_status = elevator_executor.submit(elevatorA);
         this.schedulePeople(startAmountOfPeople, person_executor);
+        this.monitorExecutors(elevator_status);
     }
 
-    // TODO: Maybe move this method and generatePeople() to plane class?
-    // TODO: destFloor must be different to arrival floor.
-    @NotNull
+    private void monitorExecutors(Future elevator_status) {
+        try {
+            while (!elevator_status.isDone()) {
+                Thread.sleep(1000);
+            }
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        finally {
+            elevator_executor.shutdown();
+            person_executor.shutdown();
+            LOGGER.info("Elevator Service Finished.");
+        }
+    }
+
     private Person generatePerson() {
         int weight = ThreadLocalRandom.current().nextInt(50, 100 + 1);
         int luggageWeight = ThreadLocalRandom.current().nextInt(5, 30 + 1);
@@ -56,15 +70,7 @@ public class Airport {
                 .distinct().limit(2).toArray();
         int arrivalFloor =  floors[0];
         int destFloor =  floors[1];
-        return new Person(weight, luggageWeight, arrivalTime, arrivalFloor, destFloor, getElevators(), lock, condition);
-    }
-
-    /**
-     * Get first available elevator
-     */
-    public ArrayList<Elevator> getElevators() {
-        // For now just return 1 elevator.
-        return this.elevators;
+        return new Person(weight, luggageWeight, arrivalTime, arrivalFloor, destFloor, elevators, lock, condition);
     }
 
     /**

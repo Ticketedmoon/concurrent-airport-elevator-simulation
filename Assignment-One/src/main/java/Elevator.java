@@ -43,8 +43,11 @@ public class Elevator implements Runnable {
     // Static and Switch variables
     private String direction;
 
+    // Amount of people (!Important for graceful program stoppage)
+    private int amountOfPeople;
+
     // Start floor is 0 when elevators are created
-    private int currentFloor = 0;
+    private int currentFloor ;
 
     // Max weight is variable passed on constructor parameter.
     private final int maxWeightCapacity;
@@ -63,16 +66,17 @@ public class Elevator implements Runnable {
 
     /* Constructor takes maxWeightCapacity as we might be able to have different elevators
      * with different weights, like a freight elevator or something */
-    public Elevator(int maxWeightCapacity, ReentrantLock lock, Condition condition) {
+    public Elevator(int maxWeightCapacity, int amountOfPeople, ReentrantLock lock, Condition condition) {
         this.direction = "up";
         this.currentFloor = 0;
+        this.outOfOrder = false;
         this.maxWeightCapacity = maxWeightCapacity;
         this.currentPassengers = new ArrayList<>();
         this.requestsForElevator = new RequestQueue();
         this.elevatorID = ++Elevator.elevatorID;
-        this.outOfOrder = false;
-        this.lock = lock;
+        this.amountOfPeople = amountOfPeople;
         this.condition = condition;
+        this.lock = lock;
     }
 
     /**
@@ -97,14 +101,14 @@ public class Elevator implements Runnable {
     public void run() {
         // Run this method forever?
         // Maybe change this from Thread to executor service? less verbose.
-        while(true) {
+        while(amountOfPeople > 0) {
             try {
-                Thread.sleep(1000);
                 if (!requestsForElevator.isEmpty()) {
                     Person person = (Person) requestsForElevator.remove();
                     goToArrivalFloor(person);
                     goToDestinationFloor(person);
                 }
+                Thread.sleep(1000);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -142,6 +146,7 @@ public class Elevator implements Runnable {
         try {
             this.currentPassengers.remove(person);
             this.currentElevatorWeight -= person.getWeight();
+            this.amountOfPeople--;
             condition.signal();
         } finally {
             lock.unlock();
