@@ -52,20 +52,13 @@ public class Airport {
         int weight = ThreadLocalRandom.current().nextInt(50, 100 + 1);
         int luggageWeight = ThreadLocalRandom.current().nextInt(5, 30 + 1);
         int arrivalTime =  ThreadLocalRandom.current().nextInt(1, 10 + 1);
-        int arrivalFloor =  ThreadLocalRandom.current().nextInt(1, 10 + 1);
-        int destFloor =  generateDestFloor(arrivalFloor);
+        int [] floors = ThreadLocalRandom.current().ints(1, 10 + 1)
+                .distinct().limit(2).toArray();
+        int arrivalFloor =  floors[0];
+        int destFloor =  floors[1];
         return new Person(weight, luggageWeight, arrivalTime, arrivalFloor, destFloor, getElevators(), lock, condition);
     }
 
-    private int generateDestFloor(int arrivalFloor)
-    {
-        int destFloor = ThreadLocalRandom.current().nextInt(1,10 + 1);
-        while(destFloor == arrivalFloor)
-        {
-            destFloor = ThreadLocalRandom.current().nextInt(1,10 + 1);
-        }
-        return destFloor;
-    }
     /**
      * Get first available elevator
      */
