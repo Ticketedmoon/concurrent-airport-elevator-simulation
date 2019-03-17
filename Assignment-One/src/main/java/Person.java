@@ -29,7 +29,6 @@ public class Person implements Runnable {
     private int arrivalFloor;
     private int destFloor;
     private Luggage luggage;
-    private boolean pickedCorrectButton;
 
     public Person(int weight, int luggageWeight, int arrivalTime, int arrivalFloor,
                   int destFloor, ArrayList<Elevator> elevators, ReentrantLock lock, Condition condition) {

@@ -1,6 +1,7 @@
 package main.java;
 
-import java.util.ArrayList;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Logger;
@@ -47,7 +48,7 @@ public class Elevator implements Runnable {
     private int amountOfPeople;
 
     // Start floor is 0 when elevators are created
-    private int currentFloor ;
+    private int currentFloor;
 
     // Max weight is variable passed on constructor parameter.
     private final int maxWeightCapacity;
@@ -56,27 +57,32 @@ public class Elevator implements Runnable {
     private int currentElevatorWeight;
 
     // Data structures for concurrency
+    // Todo: Make this concurrent arraylist?
     private ArrayList<Person> currentPassengers;
 
-    // RequestQueue implements BlockingQueue (Concurrent queue data structure)
-    private RequestQueue requestsForElevator;
+    // ConcurrentHashMap useful for discovering all passengers on current floor
+    // ConcurrentMap guarantees memory consistency on key/value operations in a multi-threading environment.
+    // Structure: (Key, Value) = (person.arrival_floor, person)
+    private ConcurrentHashMap<Integer, RequestQueue> requestsForElevator = new ConcurrentHashMap<>();
 
-    // Introduce possible side effects, locking procedure more difficult but > marks.
-    private boolean outOfOrder;
+    // Floors the elevator should visit -- Retains order
+    private LinkedHashSet<Integer> floorsToVisit = new LinkedHashSet<>();
 
     /* Constructor takes maxWeightCapacity as we might be able to have different elevators
      * with different weights, like a freight elevator or something */
     public Elevator(int maxWeightCapacity, int amountOfPeople, ReentrantLock lock, Condition condition) {
         this.direction = "up";
         this.currentFloor = 0;
-        this.outOfOrder = false;
         this.maxWeightCapacity = maxWeightCapacity;
         this.currentPassengers = new ArrayList<>();
-        this.requestsForElevator = new RequestQueue();
         this.elevatorID = ++Elevator.elevatorID;
         this.amountOfPeople = amountOfPeople;
         this.condition = condition;
         this.lock = lock;
+
+        for(int i = 0; i <= 10; i++) {
+            requestsForElevator.put(i, new RequestQueue());
+        }
     }
 
     /**
@@ -85,7 +91,8 @@ public class Elevator implements Runnable {
      * @param person Person object requesting the elevator
      */
     public void queue(Person person) {
-        requestsForElevator.add(person);
+        floorsToVisit.add(person.getArrivalFloor());
+        requestsForElevator.get(person.getArrivalFloor()).add(person);
     }
 
     public int getElevatorID() {
@@ -99,14 +106,20 @@ public class Elevator implements Runnable {
 
     @Override
     public void run() {
-        // Run this method forever?
-        // Maybe change this from Thread to executor service? less verbose.
         while(amountOfPeople > 0) {
             try {
-                if (!requestsForElevator.isEmpty()) {
-                    Person person = (Person) requestsForElevator.remove();
-                    goToArrivalFloor(person);
+                Iterator floorsToVisitIterator = floorsToVisit.iterator();
+                if (!floorsToVisit.isEmpty() && floorsToVisitIterator.hasNext()) {
+                    int floorToVisit = (int) floorsToVisitIterator.next();
+                    Person person = (Person) requestsForElevator.get(floorToVisit).peek();
+                    System.out.println(person);
+                    goToNextFloor(floorToVisit);
                     goToDestinationFloor(person);
+
+                    while(!currentPassengers.isEmpty()) {
+                        Person nextPassenger = currentPassengers.get(0);
+                        goToDestinationFloor(nextPassenger);
+                    }
                 }
                 Thread.sleep(1000);
             } catch (InterruptedException e) {
@@ -123,21 +136,34 @@ public class Elevator implements Runnable {
             direction = "down";
     }
 
-    private void allowOnPassengers(Person person) {
-        // If the elevators current weight + persons weight is less than max, let them on.
-        //TODO if we allow multiple people on a floor (to get on the lift) then we must lock this.
-        //TODO the below must also happen >AFTER< people get off on this current floor (IE people getting off on their dest floor).
-        if (currentElevatorWeight + person.getPassengerPlusLuggageWeight() < maxWeightCapacity) {
-            this.currentPassengers.add(person);
-            currentElevatorWeight += person.getPassengerPlusLuggageWeight();
-            LOGGER.info(String.format(person.toString() + " successfully got on elevator " + this.elevatorID +" at floor " + this.currentFloor + " and requests floor {%d}", person.getDestFloor()));
-            LOGGER.info("Elevator Passengers: " + this.currentPassengers.toString());
-            LOGGER.info("Elevator Weight: " + this.currentElevatorWeight + "kgs.");
+    // Todo: Remember to re-add passengers that weigh more than limit back onto queue.
+    // Todo: if we allow multiple people on a floor (to get on the lift) then we must lock this.
+    // Todo: the below must also happen >AFTER< people get off on this current floor (IE people getting off on their dest floor).
+    // Todo: In the situation that someone too fat gets on and has to get off, be sure to check other people on the same floor for less weight.
+    // Todo: This method can be refactored and reduced.
+    // If the elevators current weight + persons weight is less than max, let them on.
+    private void allowOnPassengers() {
+        RequestQueue peopleAtCurrentFloor = requestsForElevator.get(currentFloor);
+        boolean fatPeopleHere = false;
+
+        while (!peopleAtCurrentFloor.isEmpty()) {
+            Person person = (Person) peopleAtCurrentFloor.remove();
+            if (currentElevatorWeight + person.getPassengerPlusLuggageWeight() < maxWeightCapacity) {
+                this.currentPassengers.add(person);
+                currentElevatorWeight += person.getPassengerPlusLuggageWeight();
+                LOGGER.info(String.format(person.toString() + " successfully got on elevator " + this.elevatorID + " at floor " + this.currentFloor + " and requests floor {%d}", person.getDestFloor()));
+                LOGGER.info("Elevator Passengers: " + this.currentPassengers.toString());
+                LOGGER.info("Elevator Weight: " + this.currentElevatorWeight + "kgs.");
+            } else {
+                //TODO When implemented print passenger id and possibly weight of them and luggage?
+                //TODO Need to gracefully handle their request being denied and make sure that it does in fact >EVENTUALLY< get sorted
+                LOGGER.warning("Elevator weight capacity exceeded! Removing " + person.toString());
+                fatPeopleHere = true;
+            }
         }
-        else {
-            //TODO When implemented print passenger id and possibly weight of them and luggage?
-            //TODO Need to gracefully handle their request being denied and make sure that it does in fact >EVENTUALLY< get sorted
-            LOGGER.warning("Elevator weight capacity exceeded! Removing " + person.toString());
+
+        if (fatPeopleHere) {
+            floorsToVisit.add(currentFloor);
         }
     }
 
@@ -145,7 +171,7 @@ public class Elevator implements Runnable {
         lock.lock();
         try {
             this.currentPassengers.remove(person);
-            this.currentElevatorWeight -= person.getWeight();
+            this.currentElevatorWeight -= (person.getPassengerPlusLuggageWeight());
             this.amountOfPeople--;
             condition.signal();
         } finally {
@@ -153,13 +179,13 @@ public class Elevator implements Runnable {
         }
     }
 
-    private void goToArrivalFloor(Person person) throws InterruptedException {
+    private void goToNextFloor(int requestedFloor) throws InterruptedException {
         // Update direction to travel to arrival floor.
-        setDirection(person.getArrivalFloor());
-        while (currentFloor != person.getArrivalFloor()) {
+        setDirection(requestedFloor);
+        while (currentFloor != requestedFloor) {
             moveElevator();
         }
-        allowOnPassengers(person);
+        allowOnPassengers();
     }
 
     private void goToDestinationFloor(Person person) throws InterruptedException {

@@ -29,7 +29,7 @@ public class Airport {
 
     public Airport() {
         // Move the generation of people up here so we can exit program gracefully.
-        startAmountOfPeople = ThreadLocalRandom.current().nextInt(1, 3 + 1);
+        startAmountOfPeople = ThreadLocalRandom.current().nextInt(1, 2 + 1);
         person_executor = Executors.newScheduledThreadPool(startAmountOfPeople);
         elevator_executor = Executors.newFixedThreadPool(1);
         elevators = new ArrayList<>();
