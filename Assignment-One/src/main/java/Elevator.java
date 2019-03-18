@@ -1,7 +1,8 @@
 package main.java;
 
-import java.util.*;
+import java.util.LinkedList;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Logger;
@@ -58,7 +59,7 @@ public class Elevator implements Runnable {
     // ConcurrentHashMap useful for discovering all passengers on current floor
     // ConcurrentMap guarantees memory consistency on key/value operations in a multi-threading environment.
     // Structure: (Key, Value) = (person.arrival_floor, person)
-    private ConcurrentHashMap<Integer, LinkedList<Person>> requestsForElevator = new ConcurrentHashMap<>();
+    private ConcurrentHashMap<Integer, LinkedBlockingQueue> requestsForElevator = new ConcurrentHashMap<>();
 
     // Arrival/Destination floors the elevator should visit -- Retains order
     private LinkedList<Person> floorsToVisit = new LinkedList<>();
@@ -81,7 +82,7 @@ public class Elevator implements Runnable {
 
         // Set-up floors as a map - maybe change value data-type to Queue.
         for(int i = 0; i <= 10; i++) {
-            requestsForElevator.put(i, new LinkedList<>());
+            requestsForElevator.put(i, new LinkedBlockingQueue());
         }
     }
 
@@ -138,7 +139,7 @@ public class Elevator implements Runnable {
     // Todo: This method can be refactored and reduced.
     // If the elevators current weight + persons weight is less than max, let them on.
     private void allowOnPassengers() {
-        LinkedList peopleAtCurrentFloor = requestsForElevator.get(currentFloor);
+        LinkedBlockingQueue peopleAtCurrentFloor = requestsForElevator.get(currentFloor);
         while (!peopleAtCurrentFloor.isEmpty()) {
             Person person = (Person) peopleAtCurrentFloor.remove();
             if (currentElevatorWeight + person.getPassengerPlusLuggageWeight() < maxWeightCapacity) {
