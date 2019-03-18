@@ -14,8 +14,8 @@ public class Airport {
     private static final Logger LOGGER = Logger.getLogger(Airport.class.getName());
 
     // Concurrency Control Mechanisms
-    private final ReentrantLock lock = new ReentrantLock();
-    private final Condition condition = lock.newCondition();
+    private final ReentrantLock elevatorLock = new ReentrantLock();
+    private final Condition elevatorCondition = elevatorLock.newCondition();
 
     // Spawn X people for now.
     private ScheduledExecutorService person_executor;
@@ -29,7 +29,7 @@ public class Airport {
 
     public Airport() {
         // Move the generation of people up here so we can exit program gracefully.
-        startAmountOfPeople = ThreadLocalRandom.current().nextInt(1, 2 + 1);
+        startAmountOfPeople = ThreadLocalRandom.current().nextInt(1, 3 + 1);
         person_executor = Executors.newScheduledThreadPool(startAmountOfPeople);
         elevator_executor = Executors.newFixedThreadPool(1);
         elevators = new ArrayList<>();
@@ -40,22 +40,28 @@ public class Airport {
      * Allow people in, Allow elevator access, Maximise Concurrency.
      * */
     public void initialize() {
-        Elevator elevatorA = new Elevator(400, startAmountOfPeople, lock, condition);
+        elevatorLock.lock();
+        Elevator elevatorA = new Elevator(400, startAmountOfPeople, elevatorLock, elevatorCondition);
         elevators.add(elevatorA);
-        Future elevator_status = elevator_executor.submit(elevatorA);
+
+        // Initialise Elevator Threads/Tasks here
+        elevator_executor.execute(elevatorA);
+
+        // Initialise People Threads/Tasks here
         this.schedulePeople(startAmountOfPeople, person_executor);
-        this.monitorExecutors(elevator_status);
+
+        // Monitor for state completion here
+        this.monitorExecutors();
     }
 
-    private void monitorExecutors(Future elevator_status) {
+    private void monitorExecutors() {
         try {
-            while (!elevator_status.isDone()) {
-                Thread.sleep(1000);
-            }
+            elevatorCondition.await();
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
         finally {
+            elevatorLock.unlock();
             elevator_executor.shutdown();
             person_executor.shutdown();
             LOGGER.info("Elevator Service Finished.");
@@ -68,9 +74,9 @@ public class Airport {
         int arrivalTime =  ThreadLocalRandom.current().nextInt(1, 10 + 1);
         int [] floors = ThreadLocalRandom.current().ints(1, 10 + 1)
                 .distinct().limit(2).toArray();
-        int arrivalFloor =  floors[0];
-        int destFloor =  floors[1];
-        return new Person(weight, luggageWeight, arrivalTime, arrivalFloor, destFloor, elevators, lock, condition);
+        int arrivalFloor = floors[0];
+        int destFloor = floors[1];
+        return new Person(weight, luggageWeight, arrivalTime, arrivalFloor, destFloor, elevators);
     }
 
     /**

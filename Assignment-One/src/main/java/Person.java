@@ -13,8 +13,8 @@ public class Person implements Runnable {
     private static final Logger LOGGER = Logger.getLogger(Person.class.getName());
 
     // Concurrency Control Mechanisms
-    private final ReentrantLock lock;
-    private final Condition condition;
+    private final ReentrantLock personLock = new ReentrantLock();
+    private final Condition personCondition = personLock.newCondition();
 
     // Counter for static concurrent incrementation
     private static int id_counter = 0;
@@ -30,8 +30,7 @@ public class Person implements Runnable {
     private int destFloor;
     private Luggage luggage;
 
-    public Person(int weight, int luggageWeight, int arrivalTime, int arrivalFloor,
-                  int destFloor, ArrayList<Elevator> elevators, ReentrantLock lock, Condition condition) {
+    public Person(int weight, int luggageWeight, int arrivalTime, int arrivalFloor, int destFloor, ArrayList<Elevator> elevators) {
         this.weight = weight;
         this.arrivalTime = arrivalTime;
         this.arrivalFloor = arrivalFloor;
@@ -39,8 +38,6 @@ public class Person implements Runnable {
         this.luggage = new Luggage(luggageWeight);
         this.elevators = elevators;
         this.id = ++id_counter;
-        this.lock = lock;
-        this.condition = condition;
     }
 
     @Override
@@ -54,8 +51,8 @@ public class Person implements Runnable {
      * Individual Calling of the elevator.
      */
     private void requestElevator() {
+        personLock.lock();
         try {
-            lock.lock();
             int period = ThreadLocalRandom.current().nextInt(1, 3 + 1);
             Thread.sleep(period * 1000);
 
@@ -65,14 +62,14 @@ public class Person implements Runnable {
 
             // For name just focus on 1 elevator working, we can get more later.
             this.elevators.get(0).queue(this);
-            condition.await();
+            personCondition.await();
             LOGGER.info(String.format("Person with ID {%d} has arrived at their destination floor " +
                     "{%d} and has left the elevator.", this.id, this.destFloor));
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
         finally {
-            lock.unlock();
+            personLock.unlock();
         }
     }
 
@@ -94,6 +91,13 @@ public class Person implements Runnable {
 
     public int getPassengerPlusLuggageWeight() { return this.getWeight() + this.getLuggageWeight(); }
 
+    public ReentrantLock getPersonLock() {
+        return personLock;
+    }
+
+    public Condition getPersonCondition() {
+        return personCondition;
+    }
     @Override
     public String toString() {
         return String.format("Person with ID {%d}", this.id);
