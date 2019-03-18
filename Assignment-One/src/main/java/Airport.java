@@ -2,6 +2,7 @@ package main.java;
 
 import java.util.ArrayList;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Logger;
@@ -12,6 +13,7 @@ public class Airport {
 
     // Logger
     private static final Logger LOGGER = Logger.getLogger(Airport.class.getName());
+    private static long launchTime;
 
     // Concurrency Control Mechanisms
     private final ReentrantLock elevatorLock = new ReentrantLock();
@@ -25,12 +27,12 @@ public class Airport {
 
     private ArrayList<Person> people;
     private ArrayList<Elevator> elevators;
-    private int startAmountOfPeople;
+    private AtomicInteger startAmountOfPeople;
 
     public Airport() {
         // Move the generation of people up here so we can exit program gracefully.
-        startAmountOfPeople = ThreadLocalRandom.current().nextInt(3, 5 + 1);
-        person_executor = Executors.newScheduledThreadPool(startAmountOfPeople);
+        startAmountOfPeople =  new AtomicInteger(ThreadLocalRandom.current().nextInt(3, 5 + 1));
+        person_executor = Executors.newScheduledThreadPool(startAmountOfPeople.get());
         elevator_executor = Executors.newFixedThreadPool(1);
         elevators = new ArrayList<>();
     }
@@ -48,7 +50,7 @@ public class Airport {
         elevator_executor.execute(elevatorA);
 
         // Initialise People Threads/Tasks here
-        this.schedulePeople(startAmountOfPeople, person_executor);
+        this.schedulePeople(startAmountOfPeople.get(), person_executor);
 
         // Monitor for state completion here
         this.monitorExecutors();
@@ -79,6 +81,16 @@ public class Airport {
         return new Person(weight, luggageWeight, arrivalTime, arrivalFloor, destFloor, elevators);
     }
 
+    private Person generatePerson(int arrivalTime) {
+        int weight = ThreadLocalRandom.current().nextInt(50, 100 + 1);
+        int luggageWeight = ThreadLocalRandom.current().nextInt(5, 30 + 1);
+        int [] floors = ThreadLocalRandom.current().ints(1, 10 + 1)
+                .distinct().limit(2).toArray();
+        int arrivalFloor = floors[0];
+        int destFloor = floors[1];
+        return new Person(weight, luggageWeight, arrivalTime, arrivalFloor, destFloor, elevators);
+    }
+
     /**
      * Generate a list of people with random parameters (within a specific range)
      * @param amount The amount of people to generate
@@ -86,11 +98,20 @@ public class Airport {
      */
     private ArrayList<Person> generatePeople(int amount) {
         ArrayList<Person> people = new ArrayList<>();
-        for(int i = 0; i < amount; i++) {
+        Person firstPerson = generatePerson(0);
+        people.add(firstPerson);
+        //magic number to take into account the default person arriving at 0.
+        for(int i = 0; i < amount-1; i++) {
             Person person = this.generatePerson();
             people.add(person);
         }
         return people;
+    }
+
+    public static long retrieveTime()
+    {
+        long elapsedTime = System.nanoTime() - launchTime;
+        return TimeUnit.NANOSECONDS.toSeconds(elapsedTime);
     }
 
     /**
@@ -101,6 +122,7 @@ public class Airport {
     private void schedulePeople(int startAmountOfPeople, ScheduledExecutorService taskExecutor) {
         LOGGER.info(String.format("Total People Threads Generated: %d", startAmountOfPeople));
         this.people = generatePeople(startAmountOfPeople);
+        launchTime = System.nanoTime();
         for (Person person : people) {
             taskExecutor.schedule(person, person.getArrivalTime(), TimeUnit.SECONDS);
         }

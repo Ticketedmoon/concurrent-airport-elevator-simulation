@@ -3,6 +3,7 @@ package main.java;
 import java.util.LinkedList;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Logger;
@@ -42,10 +43,10 @@ public class Elevator implements Runnable {
     private String direction;
 
     // Amount of people (!Important for graceful program stoppage)
-    private int amountOfPeople;
+    private AtomicInteger amountOfPeople;
 
     // Start floor is 0 when elevators are created
-    private int currentFloor;
+    private AtomicInteger currentFloor;
 
     // Max weight is variable passed on constructor parameter.
     private final int maxWeightCapacity;
@@ -70,9 +71,9 @@ public class Elevator implements Runnable {
 
     /* Constructor takes maxWeightCapacity as we might be able to have different elevators
      * with different weights, like a freight elevator or something */
-    public Elevator(int maxWeightCapacity, int amountOfPeople, ReentrantLock elevatorLock, Condition elevatorCondition) {
+    public Elevator(int maxWeightCapacity, AtomicInteger amountOfPeople, ReentrantLock elevatorLock, Condition elevatorCondition) {
         this.direction = "up";
-        this.currentFloor = 0;
+        this.currentFloor = new AtomicInteger(0);
         this.maxWeightCapacity = maxWeightCapacity;
         this.currentPassengers = new LinkedList<>();
         this.amountOfPeople = amountOfPeople;
@@ -110,25 +111,26 @@ public class Elevator implements Runnable {
     @Override
     public void run() {
         elevatorLock.lock();
-        while(amountOfPeople > 0) {
-            try {
-                if (!floorsToVisit.isEmpty()) {
-                    visitArrivalFloor(floorsToVisit.peek().getArrivalFloor());
-                    visitDestinationOfPassengers();
-                }
-                Thread.sleep(1000);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
+        try {
+            while (amountOfPeople.get() > 0) {
+                    if (!floorsToVisit.isEmpty()) {
+                        visitArrivalFloor(floorsToVisit.peek().getArrivalFloor());
+                        visitDestinationOfPassengers();
+                    }
+                    Thread.sleep(1000);
             }
+        }catch (InterruptedException e) {
+            e.printStackTrace();
         }
-
-        elevatorCondition.signal();
-        elevatorLock.unlock();
+        finally {
+            elevatorCondition.signal();
+            elevatorLock.unlock();
+        }
     }
 
     //TODO sync needed?
     private void setDirection(int floor) {
-        if (floor > currentFloor)
+        if (floor > currentFloor.get())
             direction = "up";
         else
             direction = "down";
@@ -141,7 +143,7 @@ public class Elevator implements Runnable {
     // Todo: This method can be refactored and reduced.
     // If the elevators current weight + persons weight is less than max, let them on.
     private void allowOnPassengers() throws InterruptedException {
-        LinkedBlockingQueue peopleOnFloorWaiting = requestsForElevator.get(currentFloor);
+        LinkedBlockingQueue peopleOnFloorWaiting = requestsForElevator.get(currentFloor.get());
         while (!peopleOnFloorWaiting.isEmpty()) {
             Person person = (Person) peopleOnFloorWaiting.peek();
             person.getPersonLock().lock();
@@ -151,7 +153,7 @@ public class Elevator implements Runnable {
                     currentElevatorWeight += person.getPassengerPlusLuggageWeight();
 
                     // Remove people from queueing activities.
-                    requestsForElevator.get(currentFloor).remove(person);
+                    requestsForElevator.get(currentFloor.get()).remove(person);
                     floorsToVisit.remove(person);
                     peopleOnFloorWaiting.remove(person);
 
@@ -180,10 +182,10 @@ public class Elevator implements Runnable {
             Person person = (Person) passengerObj;
             person.getPersonLock().lock();
             try {
-                if (person.getDestFloor() == currentFloor) {
+                if (person.getDestFloor() == currentFloor.get()) {
                     this.currentPassengers.remove(person);
                     this.currentElevatorWeight -= person.getPassengerPlusLuggageWeight();
-                    this.amountOfPeople--;
+                    this.amountOfPeople.decrementAndGet();
                     person.getPersonCondition().signal();
                 }
             } finally {
@@ -198,7 +200,7 @@ public class Elevator implements Runnable {
         // Update direction to travel to arrival floor.
         if (!requestsForElevator.get(requestedFloor).isEmpty()) {
             setDirection(requestedFloor);
-            while (currentFloor != requestedFloor) {
+            while (currentFloor.get() != requestedFloor) {
                 moveElevator();
             }
         }
@@ -210,7 +212,7 @@ public class Elevator implements Runnable {
         while (!currentPassengers.isEmpty()) {
             int floor = currentPassengers.peek().getDestFloor();
             setDirection(floor);
-            while (currentFloor != floor) {
+            while (currentFloor.get() != floor) {
                 moveElevator();
             }
         }
@@ -218,12 +220,12 @@ public class Elevator implements Runnable {
 
     private void moveElevator() throws InterruptedException {
         if (direction.equals("down"))
-            currentFloor--;
+            currentFloor.getAndDecrement();
         else
-            currentFloor++;
+            currentFloor.getAndIncrement();
 
         Thread.sleep(3000);
-        LOGGER.info(String.format("Elevator with ID {%d} now on floor {%d} - moving: %s", this.getElevatorID(), this.currentFloor, this.direction));
+        LOGGER.info(String.format("Elevator with ID {%d} now on floor {%d} - moving: %s", this.getElevatorID(), this.currentFloor.get(), this.direction));
 
         // Every time the elevator arrives at a new floor, it scans for:
         // 1. Checks if this floor is their destination, and removes them.
