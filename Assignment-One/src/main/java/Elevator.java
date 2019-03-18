@@ -59,7 +59,7 @@ public class Elevator implements Runnable {
     // ConcurrentHashMap useful for discovering all passengers on current floor
     // ConcurrentMap guarantees memory consistency on key/value operations in a multi-threading environment.
     // Structure: (Key, Value) = (person.arrival_floor, person)
-    private ConcurrentHashMap<Integer, LinkedBlockingQueue> requestsForElevator = new ConcurrentHashMap<>();
+    private ConcurrentHashMap<Integer, LinkedBlockingQueue<Person>> requestsForElevator = new ConcurrentHashMap<>();
 
     // Arrival/Destination floors the elevator should visit -- Retains order
     private LinkedList<Person> floorsToVisit = new LinkedList<>();
@@ -81,8 +81,8 @@ public class Elevator implements Runnable {
         elevatorID = ++Elevator.elevatorID;
 
         // Set-up floors as a map - maybe change value data-type to Queue.
-        for(int i = 0; i <= 10; i++) {
-            requestsForElevator.put(i, new LinkedBlockingQueue());
+        for(int floorNo = 0; floorNo <= 10; floorNo++) {
+            requestsForElevator.put(floorNo, new LinkedBlockingQueue<>());
         }
     }
 
@@ -96,9 +96,14 @@ public class Elevator implements Runnable {
         requestsForElevator.get(person.getArrivalFloor()).add(person);
     }
 
+    // Getter: Elevator ID
     public int getElevatorID() {
         return elevatorID;
     }
+    // Getter: Current Elevator Weight
+    public int getCurrentElevatorWeight() { return currentElevatorWeight; }
+    // Getter: Current Elevator Passengers (Clone -> No state leakage)
+    public LinkedList getCurrentPassengers() { return (LinkedList) currentPassengers.clone(); }
 
     @Override
     public String toString() {
@@ -139,24 +144,29 @@ public class Elevator implements Runnable {
     // Todo: This method can be refactored and reduced.
     // If the elevators current weight + persons weight is less than max, let them on.
     private void allowOnPassengers() {
-        LinkedBlockingQueue peopleAtCurrentFloor = requestsForElevator.get(currentFloor);
-        while (!peopleAtCurrentFloor.isEmpty()) {
-            Person person = (Person) peopleAtCurrentFloor.remove();
-            if (currentElevatorWeight + person.getPassengerPlusLuggageWeight() < maxWeightCapacity) {
-                currentPassengers.add(person);
-                currentElevatorWeight += person.getPassengerPlusLuggageWeight();
-                requestsForElevator.get(currentFloor).remove(person);
-                floorsToVisit.remove(person);
+        LinkedBlockingQueue peopleOnFloorWaiting = requestsForElevator.get(currentFloor);
+        while (!peopleOnFloorWaiting.isEmpty()) {
+            Person person = (Person) peopleOnFloorWaiting.peek();
+            person.getPersonLock().lock();
+            try {
+                if (currentElevatorWeight + person.getPassengerPlusLuggageWeight() < maxWeightCapacity) {
+                    currentPassengers.add(person);
+                    currentElevatorWeight += person.getPassengerPlusLuggageWeight();
 
-                LOGGER.info(String.format(person.toString() + " successfully got on elevator " + elevatorID + " at floor " + this.currentFloor + " and requests floor {%d}", person.getDestFloor()));
-                LOGGER.info("Elevator Passengers: " + this.currentPassengers.toString());
-                LOGGER.info("Elevator Weight: " + this.currentElevatorWeight + "kgs.");
-            } else {
-                //TODO When implemented print passenger id and possibly weight of them and luggage?
-                //TODO Need to gracefully handle their request being denied and make sure that it does in fact >EVENTUALLY< get sorted
-                //TODO Re-add person to queue if they are too fat initially
-                LOGGER.warning("Elevator weight capacity exceeded! Removing " + person.toString());
-                return;
+                    // Remove people from queueing activities.
+                    requestsForElevator.get(currentFloor).remove(person);
+                    floorsToVisit.remove(person);
+                    peopleOnFloorWaiting.remove(person);
+
+                    // Signal waiting person thread so they can get on
+                    person.getPersonCondition().signal();
+                } else {
+                    LOGGER.warning("Person with ID {" + person + "} attempting to get on elevator with ID {" + elevatorID + "}");
+                    LOGGER.warning("Elevator weight capacity exceeded! Person with ID {" + person + "} being removed");
+                    return;
+                }
+            } finally {
+                person.getPersonLock().unlock();
             }
         }
     }

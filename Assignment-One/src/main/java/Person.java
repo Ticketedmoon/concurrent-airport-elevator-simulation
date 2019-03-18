@@ -62,9 +62,18 @@ public class Person implements Runnable {
 
             // For name just focus on 1 elevator working, we can get more later.
             this.elevators.get(0).queue(this);
+
+            /* NOTE: I thought it made more sense to put these logs here to show the communication
+             * between the elevator via locks/conditions. */
+            personCondition.await();
+            LOGGER.info(String.format(this + " successfully got on elevator " + this.elevators.get(0).getElevatorID() + " at floor " + arrivalFloor + " and requests floor {%d}", getDestFloor()));
+            LOGGER.info("Elevator Passengers: " + this.elevators.get(0).getCurrentPassengers());
+            LOGGER.info("Elevator Weight: " + this.elevators.get(0).getCurrentElevatorWeight() + "kgs.");
+
             personCondition.await();
             LOGGER.info(String.format("Person with ID {%d} has arrived at their destination floor " +
                     "{%d} and has left the elevator.", this.id, this.destFloor));
+            LOGGER.info("Elevator Weight: " + this.elevators.get(0).getCurrentElevatorWeight() + "kgs.");
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
