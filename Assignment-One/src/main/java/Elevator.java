@@ -122,16 +122,13 @@ public class Elevator implements Runnable {
                     }
                     Thread.sleep(1000);
             }
-        }catch (InterruptedException e)
-        {
+        }catch (InterruptedException e) {
             e.printStackTrace();
         }
         finally {
+            elevatorCondition.signal();
             elevatorLock.unlock();
         }
-
-        elevatorCondition.signal();
-        elevatorLock.unlock();
     }
 
     //TODO sync needed?
