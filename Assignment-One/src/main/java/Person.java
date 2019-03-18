@@ -43,7 +43,7 @@ public class Person implements Runnable {
     @Override
     public void run() {
         Timestamp airportArrivalTime = new Timestamp(System.currentTimeMillis());
-        LOGGER.info(String.format("Person with ID {%d} has arrived at the airport at time {%s}", this.id, airportArrivalTime.toString()));
+        LOGGER.info(String.format("Person with ID {%d} has arrived at the airport at time {%s}", this.id, airportArrivalTime));
         requestElevator();
     }
 
@@ -67,8 +67,6 @@ public class Person implements Runnable {
              * between the elevator via locks/conditions. */
             personCondition.await();
             LOGGER.info(String.format(this + " successfully got on elevator " + this.elevators.get(0).getElevatorID() + " at floor " + arrivalFloor + " and requests floor {%d}", getDestFloor()));
-            LOGGER.info("Elevator Passengers: " + this.elevators.get(0).getCurrentPassengers());
-            LOGGER.info("Elevator Weight: " + this.elevators.get(0).getCurrentElevatorWeight() + "kgs.");
 
             personCondition.await();
             LOGGER.info(String.format("Person with ID {%d} has arrived at their destination floor " +

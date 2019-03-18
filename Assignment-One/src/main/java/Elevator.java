@@ -97,13 +97,10 @@ public class Elevator implements Runnable {
     }
 
     // Getter: Elevator ID
-    public int getElevatorID() {
-        return elevatorID;
-    }
+    public int getElevatorID() { return elevatorID; }
+
     // Getter: Current Elevator Weight
     public int getCurrentElevatorWeight() { return currentElevatorWeight; }
-    // Getter: Current Elevator Passengers (Clone -> No state leakage)
-    public LinkedList getCurrentPassengers() { return (LinkedList) currentPassengers.clone(); }
 
     @Override
     public String toString() {
@@ -143,7 +140,7 @@ public class Elevator implements Runnable {
     // Todo: In the situation that someone too fat gets on and has to get off, be sure to check other people on the same floor for less weight.
     // Todo: This method can be refactored and reduced.
     // If the elevators current weight + persons weight is less than max, let them on.
-    private void allowOnPassengers() {
+    private void allowOnPassengers() throws InterruptedException {
         LinkedBlockingQueue peopleOnFloorWaiting = requestsForElevator.get(currentFloor);
         while (!peopleOnFloorWaiting.isEmpty()) {
             Person person = (Person) peopleOnFloorWaiting.peek();
@@ -160,6 +157,10 @@ public class Elevator implements Runnable {
 
                     // Signal waiting person thread so they can get on
                     person.getPersonCondition().signal();
+
+                    Thread.sleep(500);
+                    LOGGER.info("Elevator Passengers: " + currentPassengers);
+                    LOGGER.info("Elevator Weight: " + currentElevatorWeight + "kgs.");
                 } else {
                     LOGGER.warning("Person with ID {" + person + "} attempting to get on elevator with ID {" + elevatorID + "}");
                     LOGGER.warning("Elevator weight capacity exceeded! Person with ID {" + person + "} being removed");
@@ -222,7 +223,7 @@ public class Elevator implements Runnable {
             currentFloor++;
 
         Thread.sleep(3000);
-        LOGGER.info(String.format("Elevator with ID {%d} now on floor {%d} moving %s", this.getElevatorID(), this.currentFloor, this.direction));
+        LOGGER.info(String.format("Elevator with ID {%d} now on floor {%d} - moving: %s", this.getElevatorID(), this.currentFloor, this.direction));
 
         // Every time the elevator arrives at a new floor, it scans for:
         // 1. Checks if this floor is their destination, and removes them.
