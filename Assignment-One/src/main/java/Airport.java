@@ -2,6 +2,7 @@ package main.java;
 
 import java.util.ArrayList;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Logger;
@@ -25,12 +26,12 @@ public class Airport {
 
     private ArrayList<Person> people;
     private ArrayList<Elevator> elevators;
-    private int startAmountOfPeople;
+    private AtomicInteger startAmountOfPeople;
 
     public Airport() {
         // Move the generation of people up here so we can exit program gracefully.
-        startAmountOfPeople = ThreadLocalRandom.current().nextInt(3, 5 + 1);
-        person_executor = Executors.newScheduledThreadPool(startAmountOfPeople);
+        startAmountOfPeople =  new AtomicInteger(ThreadLocalRandom.current().nextInt(3, 5 + 1));
+        person_executor = Executors.newScheduledThreadPool(startAmountOfPeople.get());
         elevator_executor = Executors.newFixedThreadPool(1);
         elevators = new ArrayList<>();
     }
@@ -48,7 +49,7 @@ public class Airport {
         elevator_executor.execute(elevatorA);
 
         // Initialise People Threads/Tasks here
-        this.schedulePeople(startAmountOfPeople, person_executor);
+        this.schedulePeople(startAmountOfPeople.get(), person_executor);
 
         // Monitor for state completion here
         this.monitorExecutors();
