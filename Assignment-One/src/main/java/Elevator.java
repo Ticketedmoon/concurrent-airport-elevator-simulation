@@ -103,6 +103,14 @@ public class Elevator implements Runnable {
     // Getter: Current Elevator Weight
     public int getCurrentElevatorWeight() { return currentElevatorWeight; }
 
+    // Getter: Clone of current passengers - no state leakage
+    public LinkedList getCurrentPassengers() { return (LinkedList) currentPassengers.clone(); }
+
+    // Getter: Current Floor
+    public int getCurrentFloor() {
+        return currentFloor.get();
+    }
+
     @Override
     public String toString() {
         return String.format("Elevator with ID %d", Elevator.elevatorID);
@@ -142,7 +150,7 @@ public class Elevator implements Runnable {
     // Todo: In the situation that someone too fat gets on and has to get off, be sure to check other people on the same floor for less weight.
     // Todo: This method can be refactored and reduced.
     // If the elevators current weight + persons weight is less than max, let them on.
-    private void allowOnPassengers() throws InterruptedException {
+    private void allowOnPassengers() {
         LinkedBlockingQueue peopleOnFloorWaiting = requestsForElevator.get(currentFloor.get());
         while (!peopleOnFloorWaiting.isEmpty()) {
             Person person = (Person) peopleOnFloorWaiting.peek();
@@ -159,10 +167,6 @@ public class Elevator implements Runnable {
 
                     // Signal waiting person thread so they can get on
                     person.getPersonCondition().signal();
-
-                    Thread.sleep(500);
-                    LOGGER.info("Elevator Passengers: " + currentPassengers);
-                    LOGGER.info("Elevator Weight: " + currentElevatorWeight + "kgs.");
                 } else {
                     LOGGER.warning("Person with ID {" + person + "} attempting to get on elevator with ID {" + elevatorID + "}");
                     LOGGER.warning("Elevator weight capacity exceeded! Person with ID {" + person + "} being removed");

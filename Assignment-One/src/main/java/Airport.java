@@ -25,15 +25,16 @@ public class Airport {
     // Spawn 1 elevator for now.
     private ExecutorService elevator_executor;
 
+    private Elevator elevatorA;
     private ArrayList<Person> people;
     private ArrayList<Elevator> elevators;
     private AtomicInteger startAmountOfPeople;
 
-    public Airport() {
+    public Airport(int peopleAmount, int elevatorAmount) {
         // Move the generation of people up here so we can exit program gracefully.
-        startAmountOfPeople =  new AtomicInteger(ThreadLocalRandom.current().nextInt(3, 5 + 1));
+        startAmountOfPeople =  new AtomicInteger(ThreadLocalRandom.current().nextInt(peopleAmount, peopleAmount + 1));
         person_executor = Executors.newScheduledThreadPool(startAmountOfPeople.get());
-        elevator_executor = Executors.newFixedThreadPool(1);
+        elevator_executor = Executors.newFixedThreadPool(elevatorAmount);
         elevators = new ArrayList<>();
     }
 
@@ -43,7 +44,7 @@ public class Airport {
      * */
     public void initialize() {
         elevatorLock.lock();
-        Elevator elevatorA = new Elevator(400, startAmountOfPeople, elevatorLock, elevatorCondition);
+        elevatorA = new Elevator(400, startAmountOfPeople, elevatorLock, elevatorCondition);
         elevators.add(elevatorA);
 
         // Initialise Elevator Threads/Tasks here
@@ -73,7 +74,7 @@ public class Airport {
     private Person generatePerson() {
         int weight = ThreadLocalRandom.current().nextInt(50, 100 + 1);
         int luggageWeight = ThreadLocalRandom.current().nextInt(5, 30 + 1);
-        int arrivalTime =  ThreadLocalRandom.current().nextInt(1, 10 + 1);
+        int arrivalTime =  ThreadLocalRandom.current().nextInt(3, 10 + 1);
         int [] floors = ThreadLocalRandom.current().ints(1, 10 + 1)
                 .distinct().limit(2).toArray();
         int arrivalFloor = floors[0];
@@ -112,6 +113,10 @@ public class Airport {
     {
         long elapsedTime = System.nanoTime() - launchTime;
         return TimeUnit.NANOSECONDS.toSeconds(elapsedTime);
+    }
+
+    public Elevator getElevatorA() {
+        return elevatorA;
     }
 
     /**

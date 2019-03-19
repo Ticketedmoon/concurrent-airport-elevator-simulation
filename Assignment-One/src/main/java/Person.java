@@ -1,6 +1,5 @@
 package main.java;
 
-import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
@@ -53,11 +52,6 @@ public class Person implements Runnable {
     private void requestElevator() {
         personLock.lock();
         try {
-            //TODO is this just for random amount of indecision?
-            //int period = ThreadLocalRandom.current().nextInt(1, 3 + 1);
-            //Thread.sleep(period * 1000);
-
-            Timestamp requestTime = new Timestamp(System.currentTimeMillis());
             LOGGER.info(String.format("%s has requested the elevator[%d] to floor {%s} with destination floor {%s} at %s seconds",
                         this, this.elevators.get(0).getElevatorID(), this.getArrivalFloor(), this.getDestFloor(), retrieveTime()));
 
@@ -68,6 +62,8 @@ public class Person implements Runnable {
              * between the elevator via locks/conditions. */
             personCondition.await();
             LOGGER.info(String.format(this + " successfully got on elevator " + this.elevators.get(0).getElevatorID() + " at floor " + arrivalFloor + " and requests floor {%d}", getDestFloor()));
+            LOGGER.info("Elevator Passengers: " + this.elevators.get(0).getCurrentPassengers());
+            LOGGER.info("Elevator Weight: " + this.elevators.get(0).getCurrentElevatorWeight() + "kgs.");
 
             personCondition.await();
             LOGGER.info(String.format("Person with ID {%d} has arrived at their destination floor " +
@@ -106,6 +102,7 @@ public class Person implements Runnable {
     public Condition getPersonCondition() {
         return personCondition;
     }
+
     @Override
     public String toString() {
         return String.format("Person with ID {%d}", this.id);
