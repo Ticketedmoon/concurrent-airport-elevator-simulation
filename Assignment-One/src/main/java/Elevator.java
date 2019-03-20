@@ -97,7 +97,6 @@ public class Elevator implements Runnable {
         elevatorCount = ++Elevator.elevatorCount;
 
         // Set-up floors as a map. (Int -> LinkedBlockingQueue)
-        //todo if multiple elevators this will be protected.
         for(int floorNo = 0; floorNo <= 10; floorNo++) {
             requestsForElevator.put(floorNo, new LinkedBlockingQueue<>());
         }
