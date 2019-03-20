@@ -226,6 +226,7 @@ public class Elevator implements Runnable {
                         this.currentPassengers.remove(person);
                         this.currentElevatorWeight -= person.getPassengerPlusLuggageWeight();
                         this.amountOfPeople.decrementAndGet();
+
                         person.getOffElevator();
                         personCondition.signalAll();
                     }
@@ -262,8 +263,6 @@ public class Elevator implements Runnable {
                 setDirection(floor);
                 moveElevator();
             }
-
-            removePassengers();
         }
     }
 

@@ -17,6 +17,9 @@ public class DrawableRectangle extends AbstractDrawable implements Drawable {
 
     public void draw(Graphics2D g2d) {
         g2d.setColor(getColor());
+        g2d.fill(getBounds());
+
+        g2d.setColor(Color.black);
         g2d.draw(getBounds());
     }
 

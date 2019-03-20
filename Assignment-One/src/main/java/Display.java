@@ -1,7 +1,12 @@
 package main.java;
 
+import javax.imageio.ImageIO;
 import javax.swing.*;
+import javax.swing.border.LineBorder;
 import java.awt.*;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
 
 public class Display {
 
@@ -24,13 +29,18 @@ public class Display {
                 }
 
                 frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-                frame.getContentPane().setBackground( Color.black );
                 frame.setResizable(true);
+                frame.setLayout(new GridBagLayout());
 
-                frame.add(new TestPane());
-                frame.pack();
-                frame.setLocationRelativeTo(null);
-                frame.setVisible(true);
+                try {
+                    frame.add(new TestPane());
+                    frame.pack();
+
+                    frame.setLocationRelativeTo(null);
+                    frame.setVisible(true);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
             }
         });
     }
@@ -40,33 +50,40 @@ public class Display {
         private Canvas canvas;
 
         public TestPane() {
-            setLayout(new BorderLayout());
+            BorderLayout layout = new BorderLayout();
+            setLayout(layout);
             canvas = new Canvas(airport, frame);
+            canvas.setBackground(Color.black);
             add(canvas);
 
             Dimension canvasDetails = canvas.getPreferredSize();
 
-            // Background
+            // border
             canvas.add(new DrawableRectangle(new Rectangle(0, 0, canvasDetails.width, canvasDetails.height), Color.LIGHT_GRAY, "background"));
 
-            // Structure
-            canvas.add(new DrawableRectangle(new Rectangle(10, 10, canvasDetails.width-20, canvasDetails.height-20), Color.black, "black Structure"));
+            // Background
+            canvas.add(new DrawableRectangle(new Rectangle(10, 10, canvasDetails.width-20, canvasDetails.height-20), Color.gray, "black Structure"));
 
             // 10-Floors
-            canvas.add(new DrawableRectangle(new Rectangle(25, canvasDetails.height-60, canvasDetails.width-150, canvasDetails.height/15), Color.BLUE, "floor"));
-            canvas.add(new DrawableRectangle(new Rectangle(25, canvasDetails.height-120, canvasDetails.width-150, canvasDetails.height/15), Color.BLUE, "floor"));
-            canvas.add(new DrawableRectangle(new Rectangle(25, canvasDetails.height-180, canvasDetails.width-150, canvasDetails.height/15), Color.BLUE, "floor"));
+            canvas.add(new DrawableRectangle(new Rectangle(25, canvasDetails.height-60, canvasDetails.width-350, canvasDetails.height/16), Color.white, "floor"));
+            canvas.add(new DrawableRectangle(new Rectangle(25, canvasDetails.height-118, canvasDetails.width-350, canvasDetails.height/16), Color.white, "floor"));
+            canvas.add(new DrawableRectangle(new Rectangle(25, canvasDetails.height-176, canvasDetails.width-350, canvasDetails.height/16), Color.white, "floor"));
 
-            canvas.add(new DrawableRectangle(new Rectangle(25, canvasDetails.height-240, canvasDetails.width-150, canvasDetails.height/15), Color.BLUE, "floor"));
-            canvas.add(new DrawableRectangle(new Rectangle(25, canvasDetails.height-300, canvasDetails.width-150, canvasDetails.height/15), Color.BLUE, "floor"));
-            canvas.add(new DrawableRectangle(new Rectangle(25, canvasDetails.height-340, canvasDetails.width-150, canvasDetails.height/15), Color.BLUE, "floor"));
+            canvas.add(new DrawableRectangle(new Rectangle(25, canvasDetails.height-234, canvasDetails.width-350, canvasDetails.height/16), Color.white, "floor"));
+            canvas.add(new DrawableRectangle(new Rectangle(25, canvasDetails.height-292, canvasDetails.width-350, canvasDetails.height/16), Color.white, "floor"));
+            canvas.add(new DrawableRectangle(new Rectangle(25, canvasDetails.height-350, canvasDetails.width-350, canvasDetails.height/16), Color.white, "floor"));
 
-            canvas.add(new DrawableRectangle(new Rectangle(25, canvasDetails.height-400, canvasDetails.width-150, canvasDetails.height/15), Color.BLUE, "floor"));
-            canvas.add(new DrawableRectangle(new Rectangle(25, canvasDetails.height-460, canvasDetails.width-150, canvasDetails.height/15), Color.BLUE, "floor"));
-            canvas.add(new DrawableRectangle(new Rectangle(25, canvasDetails.height-520, canvasDetails.width-150, canvasDetails.height/15), Color.BLUE, "floor"));
-            canvas.add(new DrawableRectangle(new Rectangle(25, canvasDetails.height-580, canvasDetails.width-150, canvasDetails.height/15), Color.BLUE, "floor"));
+            canvas.add(new DrawableRectangle(new Rectangle(25, canvasDetails.height-408, canvasDetails.width-350, canvasDetails.height/16), Color.white, "floor"));
+            canvas.add(new DrawableRectangle(new Rectangle(25, canvasDetails.height-466, canvasDetails.width-350, canvasDetails.height/16), Color.white, "floor"));
+            canvas.add(new DrawableRectangle(new Rectangle(25, canvasDetails.height-522, canvasDetails.width-350, canvasDetails.height/16), Color.white, "floor"));
+            canvas.add(new DrawableRectangle(new Rectangle(25, canvasDetails.height-580, canvasDetails.width-350, canvasDetails.height/16), Color.white, "floor"));
 
-            DrawableRectangle elevator = new DrawableRectangle(new Rectangle(canvasDetails.width-100, canvasDetails.height-100, canvasDetails.width/15, canvasDetails.height/8), Color.RED, "elevator");
+            // text-box
+            DrawableRectangle textBox = new DrawableRectangle(new Rectangle(575, canvasDetails.height-200, 200, 175), Color.lightGray, "textBox");
+            canvas.add(textBox);
+
+            // elevator
+            DrawableRectangle elevator = new DrawableRectangle(new Rectangle(0, 0, canvasDetails.width, canvasDetails.height/5), Color.red, "elevator");
             canvas.add(elevator);
 
         }
