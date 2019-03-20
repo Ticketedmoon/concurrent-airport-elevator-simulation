@@ -58,19 +58,18 @@ public class Person implements Runnable {
         Thread.currentThread().setName("Person:" + getId());
         personLock.lock();
         try {
-            LOGGER.info(String.format("%s has requested the elevator[%d] to floor {%s} with destination floor {%s} at %s seconds",
+            LOGGER.info(String.format("%s has requested the elevator[%s] to floor {%s} with destination floor {%s} at %s seconds",
                         this, this.elevators.get(0).getElevatorID(), this.getArrivalFloor(), this.getDestFloor(), retrieveTime()));
 
             // For name just focus on 1 elevator working, we can get more later.
             this.elevators.get(0).queue(this);
 
-            /* NOTE: I thought it made more sense to put these logs here to show the communication
-             * between the elevator via locks/conditions. */
+            // Wrap .awaits() in while loops on behalf of 'Spurious Wake-ups'
             while(!hasGotOnElevator) {
                 personCondition.await();
             }
 
-            LOGGER.info(String.format(this + " successfully got on elevator " + this.elevators.get(0).getElevatorID() + " at floor " + arrivalFloor + " and requests floor {%d}", getDestFloor()));
+            LOGGER.info(String.format(this + " successfully got on elevator {%s} at floor {%d} and requests floor {%d}", this.elevators.get(0).getElevatorID(), arrivalFloor, getDestFloor()));
             LOGGER.info("Elevator Passengers: " + this.elevators.get(0).getCurrentPassengers());
             LOGGER.info("Elevator Weight: " + this.elevators.get(0).getCurrentElevatorWeight() + "kgs.");
 

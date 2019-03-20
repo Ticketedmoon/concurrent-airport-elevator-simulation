@@ -7,6 +7,8 @@ public class Display {
 
     private Airport airport;
 
+    JFrame frame = new JFrame("Airport Elevator System GUI");
+
     public Display(Airport airport) {
         this.airport = airport;
     }
@@ -21,7 +23,6 @@ public class Display {
                     ex.printStackTrace();
                 }
 
-                JFrame frame = new JFrame("Testing");
                 frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
                 frame.getContentPane().setBackground( Color.black );
                 frame.setResizable(true);
@@ -40,7 +41,7 @@ public class Display {
 
         public TestPane() {
             setLayout(new BorderLayout());
-            canvas = new Canvas(airport);
+            canvas = new Canvas(airport, frame);
             add(canvas);
 
             Dimension canvasDetails = canvas.getPreferredSize();

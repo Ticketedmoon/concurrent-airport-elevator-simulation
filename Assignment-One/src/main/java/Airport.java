@@ -79,7 +79,7 @@ public class Airport {
     private Person generatePerson() {
         int weight = ThreadLocalRandom.current().nextInt(50, 100 + 1);
         int luggageWeight = ThreadLocalRandom.current().nextInt(5, 30 + 1);
-        int arrivalTime =  ThreadLocalRandom.current().nextInt(3, 10 + 1);
+        int arrivalTime =  ThreadLocalRandom.current().nextInt(3, 120 + 1);
         int [] floors = ThreadLocalRandom.current().ints(1, 10 + 1)
                 .distinct().limit(2).toArray();
         int arrivalFloor = floors[0];
@@ -123,6 +123,10 @@ public class Airport {
 
     public Elevator getElevatorA() {
         return elevatorA;
+    }
+
+    public boolean isServiceFinished() {
+        return !isFinished.isLocked();
     }
 
     /**

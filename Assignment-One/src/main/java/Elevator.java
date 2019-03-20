@@ -41,7 +41,8 @@ public class Elevator implements Runnable {
     private final Condition elevatorCondition = elevatorLock.newCondition();
 
     // Static elevatorID such that we can increment the class variable
-    private static int elevatorID = 0;
+    private String elevatorID;
+    private static int elevatorCount = 0;
 
     // Static and Switch variables
     private String direction;
@@ -83,9 +84,11 @@ public class Elevator implements Runnable {
         this.amountOfPeople = amountOfPeople;
         this.isFinished = isFinished;
         this.isFinishedCondition = isFinishedCondition;
-        elevatorID = ++Elevator.elevatorID;
+        elevatorID = getChar(elevatorCount);
 
-        // Set-up floors as a map - maybe change value data-type to Queue.
+        elevatorCount = ++Elevator.elevatorCount;
+
+        // Set-up floors as a map. (Int -> LinkedBlockingQueue)
         //todo if multiple elevators this will be protected.
         for(int floorNo = 0; floorNo <= 10; floorNo++) {
             requestsForElevator.put(floorNo, new LinkedBlockingQueue<>());
@@ -106,8 +109,12 @@ public class Elevator implements Runnable {
         return requestsForElevator.size();
     }
 
+    public String getChar(int i) {
+        return Character.toString(i<0 || i>25 ? '?' : (char)('A' + i));
+    }
+
     // Getter: Elevator ID
-    public int getElevatorID() { return elevatorID; }
+    public String getElevatorID() { return elevatorID; }
 
     // Getter: Current Elevator Weight
     public int getCurrentElevatorWeight() { return currentElevatorWeight; }
@@ -122,12 +129,12 @@ public class Elevator implements Runnable {
 
     @Override
     public String toString() {
-        return String.format("Elevator with ID %d", Elevator.elevatorID);
+        return String.format("Elevator with ID %s", this.getElevatorID());
     }
 
     @Override
     public void run() {
-        Thread.currentThread().setName("Elevator:" + Elevator.elevatorID);
+        Thread.currentThread().setName("Elevator:" + this.elevatorID);
         elevatorLock.lock();
         isFinished.lock();
         try {
@@ -136,7 +143,10 @@ public class Elevator implements Runnable {
                     visitArrivalFloor(floorsToVisit.peek().getArrivalFloor());
                     visitDestinationOfPassengers();
                 }
-                Thread.sleep(1000);
+                else {
+                    LOGGER.info(String.format("Elevator with ID {%s} sleeping on floor {%d}", getElevatorID(), currentFloor.get()));
+                }
+                Thread.sleep(3000);
             }
         } catch (InterruptedException e) {
             e.printStackTrace();
@@ -152,8 +162,17 @@ public class Elevator implements Runnable {
     private void setDirection(int floor) {
         if (floor > currentFloor.get())
             direction = "up";
+        else if(floor == currentFloor.get())
+            direction = "stationary";
         else
             direction = "down";
+
+        try {
+            Thread.sleep(500);
+            LOGGER.info(String.format("Elevator with ID {%s} moving: %s", getElevatorID(), direction));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     // Todo: Remember to re-add passengers that weigh more than limit back onto queue.
@@ -223,8 +242,8 @@ public class Elevator implements Runnable {
     private void visitArrivalFloor(int requestedFloor) throws InterruptedException {
         // Update direction to travel to arrival floor.
         if (!requestsForElevator.get(requestedFloor).isEmpty()) {
-            setDirection(requestedFloor);
             while (currentFloor.get() != requestedFloor) {
+                setDirection(requestedFloor);
                 moveElevator();
             }
         }
@@ -235,8 +254,8 @@ public class Elevator implements Runnable {
     private void visitDestinationOfPassengers() throws InterruptedException {
         while (!currentPassengers.isEmpty()) {
             int floor = currentPassengers.peek().getDestFloor();
-            setDirection(floor);
             while (currentFloor.get() != floor) {
+                setDirection(floor);
                 moveElevator();
             }
         }
@@ -250,8 +269,8 @@ public class Elevator implements Runnable {
             else
                 currentFloor.getAndIncrement();
 
-            Thread.sleep(1000);
-            LOGGER.info(String.format("Elevator with ID {%d} now on floor {%d} - moving: %s", this.getElevatorID(), this.currentFloor.get(), this.direction));
+            LOGGER.info(String.format("Elevator with ID {%s} now on floor {%d}", getElevatorID(), this.currentFloor.get()));
+            Thread.sleep(500);
 
             removePassengers();
             allowOnPassengers();
