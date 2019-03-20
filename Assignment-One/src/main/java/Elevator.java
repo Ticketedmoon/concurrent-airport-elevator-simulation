@@ -86,6 +86,7 @@ public class Elevator implements Runnable {
         elevatorID = ++Elevator.elevatorID;
 
         // Set-up floors as a map - maybe change value data-type to Queue.
+        //todo if multiple elevators this will be protected.
         for(int floorNo = 0; floorNo <= 10; floorNo++) {
             requestsForElevator.put(floorNo, new LinkedBlockingQueue<>());
         }
@@ -122,6 +123,7 @@ public class Elevator implements Runnable {
 
     @Override
     public void run() {
+        Thread.currentThread().setName("Elevator:" + Elevator.elevatorID);
         elevatorLock.lock();
         isFinished.lock();
         try {
@@ -148,6 +150,10 @@ public class Elevator implements Runnable {
             direction = "up";
         else
             direction = "down";
+    }
+
+    public int getQueue() {
+        return requestsForElevator.size();
     }
 
     // Todo: Remember to re-add passengers that weigh more than limit back onto queue.

@@ -54,6 +54,7 @@ public class Person implements Runnable {
      * Individual Calling of the elevator.
      */
     private void requestElevator() {
+        Thread.currentThread().setName("Person:" + getId());
         personLock.lock();
         try {
             LOGGER.info(String.format("%s has requested the elevator[%d] to floor {%s} with destination floor {%s} at %s seconds",
@@ -98,6 +99,8 @@ public class Person implements Runnable {
     public int getDestFloor() {
         return this.destFloor;
     }
+
+    public int getId() { return this.id; }
 
     public int getWeight() { return this.weight; }
 
