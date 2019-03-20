@@ -64,7 +64,9 @@ public class Airport {
 
     private void monitorExecutors() {
         try {
-            airportClosedCondition.await();
+            while(startAmountOfPeople.get() > 0){
+                airportClosedCondition.await();
+            }
         } catch (InterruptedException e) {
             e.printStackTrace();
         }

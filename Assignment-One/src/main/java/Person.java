@@ -1,6 +1,7 @@
 package main.java;
 
 import java.util.ArrayList;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Logger;
@@ -16,8 +17,8 @@ public class Person implements Runnable {
     private final Condition personCondition;
 
     // Synchronization primitives
-    private boolean hasGotOnElevator = false;
-    private boolean hasGotOffElevator = false;
+    private AtomicBoolean hasGotOnElevator = new AtomicBoolean(false);
+    private AtomicBoolean hasGotOffElevator = new AtomicBoolean(false);
 
     // Counter for static concurrent incrementation
     private static int id_counter = 0;
@@ -48,8 +49,8 @@ public class Person implements Runnable {
 
     @Override
     public void run() {
-        Thread.currentThread().setName("Person:" + getId());
         LOGGER.info(String.format("Person with ID {%d} has arrived at the airport at time {%s}", this.id, retrieveTime()));
+        Thread.currentThread().setName("Person:" + getId());
         requestElevator(elevatorA);
     }
 
@@ -57,7 +58,6 @@ public class Person implements Runnable {
      * Individual Calling of the elevator.
      */
     private void requestElevator(Elevator elevator) {
-        Thread.currentThread().setName("Person:" + getId());
         personLock.lock();
         try {
             LOGGER.info(String.format("%s has requested the elevator[%s] to floor {%s} with destination floor {%s} at %s seconds",
@@ -67,7 +67,7 @@ public class Person implements Runnable {
             elevator.queue(this);
 
             // Wrap .awaits() in while loops on behalf of 'Spurious Wake-ups'
-            while(!hasGotOnElevator) {
+            while(!hasGotOnElevator.get()) {
                 personCondition.await();
             }
 
@@ -76,7 +76,7 @@ public class Person implements Runnable {
             LOGGER.info("Elevator Passengers: " + elevator.getCurrentPassengers());
             LOGGER.info("Elevator Weight: " + elevator.getCurrentElevatorWeight() + "kgs.");
 
-            while(!hasGotOffElevator) {
+            while(!hasGotOffElevator.get()) {
                 personCondition.await();
             }
 
@@ -111,12 +111,10 @@ public class Person implements Runnable {
 
     public int getPassengerPlusLuggageWeight() { return this.getWeight() + this.getLuggageWeight(); }
 
-    public void getOnElevator() {
-        hasGotOnElevator = true;
-    }
+    public void getOnElevator() { hasGotOnElevator.getAndSet(true); }
 
     public void getOffElevator() {
-        hasGotOffElevator = true;
+        hasGotOffElevator.getAndSet(true);
     }
     @Override
     public String toString() {
