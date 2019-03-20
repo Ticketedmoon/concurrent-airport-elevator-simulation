@@ -42,6 +42,7 @@ public class Person implements Runnable {
 
     @Override
     public void run() {
+        Thread.currentThread().setName("Person:" + getId());
         LOGGER.info(String.format("Person with ID {%d} has arrived at the airport at time {%s}", this.id, retrieveTime()));
         requestElevator();
     }
@@ -60,12 +61,18 @@ public class Person implements Runnable {
 
             /* NOTE: I thought it made more sense to put these logs here to show the communication
              * between the elevator via locks/conditions. */
-            personCondition.await();
+            while(this.elevators.get(0).getCurrentFloor() != this.getArrivalFloor()) {
+                personCondition.await();
+            }
+
             LOGGER.info(String.format(this + " successfully got on elevator " + this.elevators.get(0).getElevatorID() + " at floor " + arrivalFloor + " and requests floor {%d}", getDestFloor()));
             LOGGER.info("Elevator Passengers: " + this.elevators.get(0).getCurrentPassengers());
             LOGGER.info("Elevator Weight: " + this.elevators.get(0).getCurrentElevatorWeight() + "kgs.");
 
-            personCondition.await();
+            while(this.elevators.get(0).getCurrentFloor() != this.getDestFloor()){
+                personCondition.await();
+            }
+
             LOGGER.info(String.format("Person with ID {%d} has arrived at their destination floor " +
                     "{%d} and has left the elevator at %s seconds.", this.id, this.destFloor, retrieveTime()));
             LOGGER.info("Elevator Weight: " + this.elevators.get(0).getCurrentElevatorWeight() + "kgs.");
@@ -88,6 +95,8 @@ public class Person implements Runnable {
     public int getDestFloor() {
         return this.destFloor;
     }
+
+    public int getId() { return this.id; }
 
     public int getWeight() { return this.weight; }
 

@@ -43,6 +43,7 @@ public class Airport {
      * Allow people in, Allow elevator access, Maximise Concurrency.
      * */
     public void initialize() {
+        Thread.currentThread().setName("Airport Thread");
         elevatorLock.lock();
         elevatorA = new Elevator(400, startAmountOfPeople, elevatorLock, elevatorCondition);
         elevators.add(elevatorA);
