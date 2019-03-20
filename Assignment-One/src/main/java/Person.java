@@ -16,6 +16,10 @@ public class Person implements Runnable {
     private final ReentrantLock personLock = new ReentrantLock();
     private final Condition personCondition = personLock.newCondition();
 
+    // Synchronization primitives
+    private boolean hasGotOnElevator = false;
+    private boolean hasGotOffElevator = false;
+
     // Counter for static concurrent incrementation
     private static int id_counter = 0;
 
@@ -60,12 +64,18 @@ public class Person implements Runnable {
 
             /* NOTE: I thought it made more sense to put these logs here to show the communication
              * between the elevator via locks/conditions. */
-            personCondition.await();
+            while(!hasGotOnElevator) {
+                personCondition.await();
+            }
+
             LOGGER.info(String.format(this + " successfully got on elevator " + this.elevators.get(0).getElevatorID() + " at floor " + arrivalFloor + " and requests floor {%d}", getDestFloor()));
             LOGGER.info("Elevator Passengers: " + this.elevators.get(0).getCurrentPassengers());
             LOGGER.info("Elevator Weight: " + this.elevators.get(0).getCurrentElevatorWeight() + "kgs.");
 
-            personCondition.await();
+            while(!hasGotOffElevator) {
+                personCondition.await();
+            }
+
             LOGGER.info(String.format("Person with ID {%d} has arrived at their destination floor " +
                     "{%d} and has left the elevator at %s seconds.", this.id, this.destFloor, retrieveTime()));
             LOGGER.info("Elevator Weight: " + this.elevators.get(0).getCurrentElevatorWeight() + "kgs.");
@@ -103,6 +113,13 @@ public class Person implements Runnable {
         return personCondition;
     }
 
+    public void getOnElevator() {
+        hasGotOnElevator = true;
+    }
+
+    public void getOffElevator() {
+        hasGotOffElevator = true;
+    }
     @Override
     public String toString() {
         return String.format("Person with ID {%d}", this.id);

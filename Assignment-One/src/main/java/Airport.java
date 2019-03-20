@@ -16,8 +16,8 @@ public class Airport {
     private static long launchTime;
 
     // Concurrency Control Mechanisms
-    private final ReentrantLock elevatorLock = new ReentrantLock();
-    private final Condition elevatorCondition = elevatorLock.newCondition();
+    private final ReentrantLock isFinished = new ReentrantLock();
+    private final Condition isFinishedCondition = isFinished.newCondition();
 
     // Spawn X people for now.
     private ScheduledExecutorService person_executor;
@@ -43,8 +43,8 @@ public class Airport {
      * Allow people in, Allow elevator access, Maximise Concurrency.
      * */
     public void initialize() {
-        elevatorLock.lock();
-        elevatorA = new Elevator(400, startAmountOfPeople, elevatorLock, elevatorCondition);
+        isFinished.lock();
+        elevatorA = new Elevator(400, startAmountOfPeople, isFinished, isFinishedCondition);
         elevators.add(elevatorA);
 
         // Initialise Elevator Threads/Tasks here
@@ -59,18 +59,20 @@ public class Airport {
 
     private void monitorExecutors() {
         try {
-            elevatorCondition.await();
+            isFinishedCondition.await();
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
         finally {
-            elevatorLock.unlock();
+            isFinished.unlock();
             elevator_executor.shutdown();
             person_executor.shutdown();
             LOGGER.info("Elevator Service Finished.");
         }
     }
 
+
+    @SuppressWarnings("Duplicates")
     private Person generatePerson() {
         int weight = ThreadLocalRandom.current().nextInt(50, 100 + 1);
         int luggageWeight = ThreadLocalRandom.current().nextInt(5, 30 + 1);
@@ -82,6 +84,7 @@ public class Airport {
         return new Person(weight, luggageWeight, arrivalTime, arrivalFloor, destFloor, elevators);
     }
 
+    @SuppressWarnings("Duplicates")
     private Person generatePerson(int arrivalTime) {
         int weight = ThreadLocalRandom.current().nextInt(50, 100 + 1);
         int luggageWeight = ThreadLocalRandom.current().nextInt(5, 30 + 1);

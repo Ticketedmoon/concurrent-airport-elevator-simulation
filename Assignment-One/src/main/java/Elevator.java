@@ -36,6 +36,10 @@ public class Elevator implements Runnable {
     // Logger
     private static final Logger LOGGER = Logger.getLogger(Elevator.class.getName());
 
+    // Concurrency Control Mechanisms
+    private final ReentrantLock elevatorLock = new ReentrantLock();
+    private final Condition elevatorCondition = elevatorLock.newCondition();
+
     // Static elevatorID such that we can increment the class variable
     private static int elevatorID = 0;
 
@@ -55,7 +59,7 @@ public class Elevator implements Runnable {
     private int currentElevatorWeight;
 
     // Data structures for concurrency
-    private LinkedList<Person> currentPassengers;
+    private LinkedBlockingQueue<Person> currentPassengers;
 
     // ConcurrentHashMap useful for discovering all passengers on current floor
     // ConcurrentMap guarantees memory consistency on key/value operations in a multi-threading environment.
@@ -65,20 +69,20 @@ public class Elevator implements Runnable {
     // Arrival/Destination floors the elevator should visit -- Retains order
     private LinkedList<Person> floorsToVisit = new LinkedList<>();
 
-    // Concurrency Control Mechanisms
-    private final ReentrantLock elevatorLock;
-    private final Condition elevatorCondition;
+    // Control state for graceful program termination.
+    private ReentrantLock isFinished;
+    private Condition isFinishedCondition;
 
     /* Constructor takes maxWeightCapacity as we might be able to have different elevators
      * with different weights, like a freight elevator or something */
-    public Elevator(int maxWeightCapacity, AtomicInteger amountOfPeople, ReentrantLock elevatorLock, Condition elevatorCondition) {
+    public Elevator(int maxWeightCapacity, AtomicInteger amountOfPeople, ReentrantLock isFinished, Condition isFinishedCondition) {
         this.direction = "up";
         this.currentFloor = new AtomicInteger(0);
         this.maxWeightCapacity = maxWeightCapacity;
-        this.currentPassengers = new LinkedList<>();
+        this.currentPassengers = new LinkedBlockingQueue<>();
         this.amountOfPeople = amountOfPeople;
-        this.elevatorLock = elevatorLock;
-        this.elevatorCondition = elevatorCondition;
+        this.isFinished = isFinished;
+        this.isFinishedCondition = isFinishedCondition;
         elevatorID = ++Elevator.elevatorID;
 
         // Set-up floors as a map - maybe change value data-type to Queue.
@@ -104,7 +108,7 @@ public class Elevator implements Runnable {
     public int getCurrentElevatorWeight() { return currentElevatorWeight; }
 
     // Getter: Clone of current passengers - no state leakage
-    public LinkedList getCurrentPassengers() { return (LinkedList) currentPassengers.clone(); }
+    public LinkedBlockingQueue<Person> getCurrentPassengers() { return currentPassengers; }
 
     // Getter: Current Floor
     public int getCurrentFloor() {
@@ -119,20 +123,22 @@ public class Elevator implements Runnable {
     @Override
     public void run() {
         elevatorLock.lock();
+        isFinished.lock();
         try {
             while (amountOfPeople.get() > 0) {
-                    if (!floorsToVisit.isEmpty()) {
-                        visitArrivalFloor(floorsToVisit.peek().getArrivalFloor());
-                        visitDestinationOfPassengers();
-                    }
-                    Thread.sleep(1000);
+                if (!floorsToVisit.isEmpty()) {
+                    visitArrivalFloor(floorsToVisit.peek().getArrivalFloor());
+                    visitDestinationOfPassengers();
+                }
+                Thread.sleep(1000);
             }
-        }catch (InterruptedException e) {
+        } catch (InterruptedException e) {
             e.printStackTrace();
         }
         finally {
-            elevatorCondition.signal();
             elevatorLock.unlock();
+            isFinishedCondition.signal();
+            isFinished.unlock();
         }
     }
 
@@ -151,50 +157,58 @@ public class Elevator implements Runnable {
     // Todo: This method can be refactored and reduced.
     // If the elevators current weight + persons weight is less than max, let them on.
     private void allowOnPassengers() {
-        LinkedBlockingQueue peopleOnFloorWaiting = requestsForElevator.get(currentFloor.get());
-        while (!peopleOnFloorWaiting.isEmpty()) {
-            Person person = (Person) peopleOnFloorWaiting.peek();
-            person.getPersonLock().lock();
-            try {
-                if (currentElevatorWeight + person.getPassengerPlusLuggageWeight() < maxWeightCapacity) {
-                    currentPassengers.add(person);
-                    currentElevatorWeight += person.getPassengerPlusLuggageWeight();
+        elevatorLock.lock();
+        try {
+            LinkedBlockingQueue peopleOnFloorWaiting = requestsForElevator.get(currentFloor.get());
+            while (!peopleOnFloorWaiting.isEmpty()) {
+                Person person = (Person) peopleOnFloorWaiting.peek();
+                person.getPersonLock().lock();
+                try {
+                    if (currentElevatorWeight + person.getPassengerPlusLuggageWeight() < maxWeightCapacity) {
+                        currentPassengers.add(person);
+                        currentElevatorWeight += person.getPassengerPlusLuggageWeight();
+                        requestsForElevator.get(currentFloor.get()).remove(person);
+                        floorsToVisit.remove(person);
 
-                    // Remove people from queueing activities.
-                    requestsForElevator.get(currentFloor.get()).remove(person);
-                    floorsToVisit.remove(person);
-                    peopleOnFloorWaiting.remove(person);
-
-                    // Signal waiting person thread so they can get on
-                    person.getPersonCondition().signal();
-                } else {
-                    LOGGER.warning("Person with ID {" + person + "} attempting to get on elevator with ID {" + elevatorID + "}");
-                    LOGGER.warning("Elevator weight capacity exceeded! Person with ID {" + person + "} being removed");
-                    return;
+                        person.getOnElevator();
+                        person.getPersonCondition().signal();
+                    } else {
+                        LOGGER.warning("Person with ID {" + person + "} attempting to get on elevator with ID {" + elevatorID + "}");
+                        LOGGER.warning("Elevator weight capacity exceeded! Person with ID {" + person + "} being removed");
+                        return;
+                    }
+                } finally {
+                    person.getPersonLock().unlock();
                 }
-            } finally {
-                person.getPersonLock().unlock();
             }
+        } finally {
+            elevatorCondition.signal();
+            elevatorLock.unlock();
         }
     }
 
     // We clone the LinkedList of passengers such that we can iterate through them.
     // If we used the actual 'currentPassengers' LinkedList, we would find difficulty after removal of some elements.
     private void removePassengers() {
-        LinkedList passengers = (LinkedList) currentPassengers.clone();
-        for (Object passengerObj: passengers) {
-            Person person = (Person) passengerObj;
-            person.getPersonLock().lock();
-            try {
-                if (person.getDestFloor() == currentFloor.get()) {
-                    this.currentPassengers.remove(person);
-                    this.currentElevatorWeight -= person.getPassengerPlusLuggageWeight();
-                    this.amountOfPeople.decrementAndGet();
-                    person.getPersonCondition().signal();
+        elevatorLock.lock();
+        try {
+            for (Person person : currentPassengers) {
+                person.getPersonLock().lock();
+                try {
+                    if (person.getDestFloor() == currentFloor.get()) {
+                        this.currentPassengers.remove(person);
+                        this.currentElevatorWeight -= person.getPassengerPlusLuggageWeight();
+                        this.amountOfPeople.decrementAndGet();
+                        person.getOffElevator();
+                        person.getPersonCondition().signal();
+                    }
+                } finally {
+                    person.getPersonLock().unlock();
                 }
-            } finally {
-                person.getPersonLock().unlock();
             }
+        } finally {
+            elevatorCondition.signal();
+            elevatorLock.unlock();
         }
     }
 
@@ -223,19 +237,20 @@ public class Elevator implements Runnable {
     }
 
     private void moveElevator() throws InterruptedException {
-        if (direction.equals("down"))
-            currentFloor.getAndDecrement();
-        else
-            currentFloor.getAndIncrement();
+        elevatorLock.lock();
+        try {
+            if (direction.equals("down"))
+                currentFloor.getAndDecrement();
+            else
+                currentFloor.getAndIncrement();
 
-        Thread.sleep(3000);
-        LOGGER.info(String.format("Elevator with ID {%d} now on floor {%d} - moving: %s", this.getElevatorID(), this.currentFloor.get(), this.direction));
+            Thread.sleep(1000);
+            LOGGER.info(String.format("Elevator with ID {%d} now on floor {%d} - moving: %s", this.getElevatorID(), this.currentFloor.get(), this.direction));
 
-        // Every time the elevator arrives at a new floor, it scans for:
-        // 1. Checks if this floor is their destination, and removes them.
-        // 2. Checks if any passengers want to get on, given the elevator is going in
-        //    the same direction as their destination.
-        removePassengers();
-        allowOnPassengers();
+            removePassengers();
+            allowOnPassengers();
+        } finally {
+            elevatorLock.unlock();
+        }
     }
 }
