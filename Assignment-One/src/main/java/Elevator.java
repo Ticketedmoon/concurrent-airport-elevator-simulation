@@ -102,6 +102,10 @@ public class Elevator implements Runnable {
         requestsForElevator.get(person.getArrivalFloor()).add(person);
     }
 
+    public int getQueue() {
+        return requestsForElevator.size();
+    }
+
     // Getter: Elevator ID
     public int getElevatorID() { return elevatorID; }
 
@@ -150,10 +154,6 @@ public class Elevator implements Runnable {
             direction = "up";
         else
             direction = "down";
-    }
-
-    public int getQueue() {
-        return requestsForElevator.size();
     }
 
     // Todo: Remember to re-add passengers that weigh more than limit back onto queue.

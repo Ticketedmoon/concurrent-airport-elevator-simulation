@@ -46,6 +46,7 @@ public class Airport {
         Thread.currentThread().setName("Airport Thread");
         isFinished.lock();
         elevatorA = new Elevator(400, startAmountOfPeople, isFinished, isFinishedCondition);
+
         elevators.add(elevatorA);
 
         // Initialise Elevator Threads/Tasks here
@@ -71,7 +72,6 @@ public class Airport {
             LOGGER.info("Elevator Service Finished.");
         }
     }
-
 
     @SuppressWarnings("Duplicates")
     private Person generatePerson() {

@@ -46,6 +46,7 @@ public class Person implements Runnable {
 
     @Override
     public void run() {
+        Thread.currentThread().setName("Person:" + getId());
         LOGGER.info(String.format("Person with ID {%d} has arrived at the airport at time {%s}", this.id, retrieveTime()));
         requestElevator();
     }
