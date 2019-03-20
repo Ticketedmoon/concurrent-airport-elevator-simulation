@@ -31,6 +31,8 @@ public class Airport {
     private AtomicInteger startAmountOfPeople;
 
     public Airport(int peopleAmount, int elevatorAmount) {
+        System.setProperty("java.util.logging.SimpleFormatter.format", "%1$tF %1$tT %4$s - %5$s%6$s%n");
+
         // Move the generation of people up here so we can exit program gracefully.
         startAmountOfPeople =  new AtomicInteger(ThreadLocalRandom.current().nextInt(peopleAmount, peopleAmount + 1));
         person_executor = Executors.newScheduledThreadPool(startAmountOfPeople.get());
