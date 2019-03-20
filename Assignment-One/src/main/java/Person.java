@@ -12,9 +12,8 @@ public class Person implements Runnable {
     // Logger
     private static final Logger LOGGER = Logger.getLogger(Person.class.getName());
 
-    // Concurrency Control Mechanisms
-    private final ReentrantLock personLock = new ReentrantLock();
-    private final Condition personCondition = personLock.newCondition();
+    private final ReentrantLock personLock;
+    private final Condition personCondition;
 
     // Synchronization primitives
     private boolean hasGotOnElevator = false;
@@ -24,7 +23,7 @@ public class Person implements Runnable {
     private static int id_counter = 0;
 
     // Each person has access to all the elevators
-    private ArrayList<Elevator> elevators;
+    private Elevator elevatorA;
 
     // Default Person Object parameters.
     private int id;
@@ -34,13 +33,16 @@ public class Person implements Runnable {
     private int destFloor;
     private Luggage luggage;
 
-    public Person(int weight, int luggageWeight, int arrivalTime, int arrivalFloor, int destFloor, ArrayList<Elevator> elevators) {
+    public Person(int weight, int luggageWeight, int arrivalTime, int arrivalFloor, int destFloor, Elevator elevatorA,
+                  ReentrantLock personLock, Condition personCondition) {
         this.weight = weight;
         this.arrivalTime = arrivalTime;
         this.arrivalFloor = arrivalFloor;
         this.destFloor = destFloor;
         this.luggage = new Luggage(luggageWeight);
-        this.elevators = elevators;
+        this.elevatorA = elevatorA;
+        this.personLock = personLock;
+        this.personCondition = personCondition;
         this.id = ++id_counter;
     }
 
@@ -48,38 +50,39 @@ public class Person implements Runnable {
     public void run() {
         Thread.currentThread().setName("Person:" + getId());
         LOGGER.info(String.format("Person with ID {%d} has arrived at the airport at time {%s}", this.id, retrieveTime()));
-        requestElevator();
+        requestElevator(elevatorA);
     }
 
     /**
      * Individual Calling of the elevator.
      */
-    private void requestElevator() {
+    private void requestElevator(Elevator elevator) {
         Thread.currentThread().setName("Person:" + getId());
         personLock.lock();
         try {
             LOGGER.info(String.format("%s has requested the elevator[%s] to floor {%s} with destination floor {%s} at %s seconds",
-                        this, this.elevators.get(0).getElevatorID(), this.getArrivalFloor(), this.getDestFloor(), retrieveTime()));
+                        this, elevator.getElevatorID(), this.getArrivalFloor(), this.getDestFloor(), retrieveTime()));
 
             // For name just focus on 1 elevator working, we can get more later.
-            this.elevators.get(0).queue(this);
+            elevator.queue(this);
 
             // Wrap .awaits() in while loops on behalf of 'Spurious Wake-ups'
             while(!hasGotOnElevator) {
                 personCondition.await();
             }
 
-            LOGGER.info(String.format(this + " successfully got on elevator {%s} at floor {%d} and requests floor {%d}", this.elevators.get(0).getElevatorID(), arrivalFloor, getDestFloor()));
-            LOGGER.info("Elevator Passengers: " + this.elevators.get(0).getCurrentPassengers());
-            LOGGER.info("Elevator Weight: " + this.elevators.get(0).getCurrentElevatorWeight() + "kgs.");
+            LOGGER.info(String.format(this + " successfully got on elevator {%s} at floor {%d} and requests floor {%d}",
+                        elevator.getElevatorID(), arrivalFloor, getDestFloor()));
+            LOGGER.info("Elevator Passengers: " + elevator.getCurrentPassengers());
+            LOGGER.info("Elevator Weight: " + elevator.getCurrentElevatorWeight() + "kgs.");
 
             while(!hasGotOffElevator) {
                 personCondition.await();
             }
 
             LOGGER.info(String.format("Person with ID {%d} has arrived at their destination floor " +
-                    "{%d} and has left the elevator at %s seconds.", this.id, this.destFloor, retrieveTime()));
-            LOGGER.info("Elevator Weight: " + this.elevators.get(0).getCurrentElevatorWeight() + "kgs.");
+                        "{%d} and has left the elevator at %s seconds.", this.id, this.destFloor, retrieveTime()));
+            LOGGER.info("Elevator Weight: " + elevator.getCurrentElevatorWeight() + "kgs.");
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -107,14 +110,6 @@ public class Person implements Runnable {
     public int getLuggageWeight() { return this.luggage.getWeight(); }
 
     public int getPassengerPlusLuggageWeight() { return this.getWeight() + this.getLuggageWeight(); }
-
-    public ReentrantLock getPersonLock() {
-        return personLock;
-    }
-
-    public Condition getPersonCondition() {
-        return personCondition;
-    }
 
     public void getOnElevator() {
         hasGotOnElevator = true;
