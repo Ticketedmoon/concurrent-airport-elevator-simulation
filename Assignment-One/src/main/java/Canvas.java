@@ -100,24 +100,24 @@ public class Canvas extends JComponent {
 
         // draw text - text-box
         g2d.setColor(Color.blue);
-        g2d.drawString("Information Area: " + elevatorA.getElevatorID(), 625, 420);
+        g2d.drawString("Information Area: " + elevatorA.getElevatorID(), 580, 420);
 
         // Changing fields
         if (elevatorA.getCurrentFloor() == 0 || elevatorA.getCurrentFloor() == 1)
-            g2d.drawString("Current Elevator Floor: " + 1, 610, 440);
+            g2d.drawString("Current Elevator Floor: " + 1, 580, 440);
         else
-            g2d.drawString("Current Elevator Floor: " + elevatorA.getCurrentFloor(), 610, 440);
-
-        // Current Passengers
-        g2d.drawString("Current Passengers: ", 585, 470);
-        int y_counter = 490;
-        for(Person person : elevatorA.getCurrentPassengers()) {
-            g2d.drawString(person.toString(), 590, y_counter);
-            y_counter += 15;
-        }
+            g2d.drawString("Current Elevator Floor: " + elevatorA.getCurrentFloor(), 580, 440);
 
         // Current Elevator Weight
-        g2d.drawString("Weight: " + elevatorA.getCurrentElevatorWeight(), 705, 470);
+        g2d.drawString("Elevator Weight: " + elevatorA.getCurrentElevatorWeight(), 580, 460);
+
+        // Current Passengers
+        g2d.drawString("Current Passengers: ", 580, 480);
+        int y_counter = 500;
+        for(Person person : elevatorA.getCurrentPassengers()) {
+            g2d.drawString(person.toString(), 580, y_counter);
+            y_counter += 15;
+        }
 
     }
 }
