@@ -79,7 +79,7 @@ public class Display {
             canvas.add(new DrawableRectangle(new Rectangle(25, canvasDetails.height-580, canvasDetails.width-350, canvasDetails.height/16), Color.white, "floor"));
 
             // text-box
-            DrawableRectangle textBox = new DrawableRectangle(new Rectangle(575, canvasDetails.height-200, 200, 175), Color.lightGray, "textBox");
+            DrawableRectangle textBox = new DrawableRectangle(new Rectangle(565, canvasDetails.height-200, 220, 175), Color.lightGray, "textBox");
             canvas.add(textBox);
 
             // elevator
