@@ -71,10 +71,10 @@ public class Airport {
             e.printStackTrace();
         }
         finally {
+            LOGGER.info("Elevator Service Finished.");
             airportClosedLock.unlock();
             elevator_executor.shutdown();
             person_executor.shutdown();
-            LOGGER.info("Elevator Service Finished.");
         }
     }
 
