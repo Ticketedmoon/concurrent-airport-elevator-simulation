@@ -6,6 +6,8 @@
 3. Compile all java files: `javac main/java/*.java`  
 4. Run with: `java main/java/Launcher`  
 
+**View the output via the terminal logs, GUI and once closed, via the "output.dat" file generated in the project source directory.**
+
 #### Optional:
 > If the GUI is too verbose, one can disable it using the `disable-gui` command line argument.  
 > E.G. `java main/java/Launcher --disable-gui`
