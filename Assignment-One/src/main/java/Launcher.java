@@ -1,8 +1,8 @@
 package main.java;
 
 // Launcher class - build and run with:
-// 1. javac *.java
-// 2. java Launcher
+// 1. javac main/java/*.java
+// 2. java main/javaLauncher
 public class Launcher {
 
     public static void main(String[] args) {

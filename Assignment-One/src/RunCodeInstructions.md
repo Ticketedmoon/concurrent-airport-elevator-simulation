@@ -1,6 +1,8 @@
 #### To run our code:
 1. Ensure you are in the directory: `src/`  
-2. Compile all java files: `javac main/java/*.java`  
+2. Run our scripts `build.sh` via `bash build.sh` or `./build.sh`
+##### If this does not work, try compile/run manually with:
+4. Compile all java files: `javac main/java/*.java`  
 3. Run with: `java main/java/Launcher`  
 
 #### Optional:
