@@ -3,5 +3,7 @@
 *.class
 production/
 target/
-*.lck
 output.dat
+*.dat
+Assignment-One/src/output.dat
+
