@@ -1,18 +1,11 @@
 package main.java;
 
-import java.io.BufferedWriter;
-import java.io.FileWriter;
-import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.logging.FileHandler;
-import java.util.logging.LogRecord;
 import java.util.logging.Logger;
-import java.util.logging.SimpleFormatter;
 
 // For concurrent access, using ThreadLocalRandom instead of Math.random() results
 // in less contention and, ultimately, better performance.
@@ -21,7 +14,6 @@ public class Airport {
     // Logger
     private static final Logger LOGGER = Logger.getLogger(Airport.class.getName());
     private static long launchTime;
-    private static FileHandler fh;
 
     // Concurrency Control Mechanisms
     private final ReentrantLock airportClosedLock = new ReentrantLock();
@@ -44,6 +36,8 @@ public class Airport {
     public Airport(int peopleAmount) {
         // Move the generation of people up here so we can exit program gracefully.
         startAmountOfPeople =  new AtomicInteger(ThreadLocalRandom.current().nextInt(peopleAmount, peopleAmount + 1));
+
+        // Executor service thread pools
         person_executor = Executors.newScheduledThreadPool(startAmountOfPeople.get());
         elevator_executor = Executors.newFixedThreadPool(1);
     }
@@ -117,7 +111,8 @@ public class Airport {
         ArrayList<Person> people = new ArrayList<>();
         Person firstPerson = generatePerson(0);
         people.add(firstPerson);
-        //magic number to take into account the default person arriving at 0.
+
+        // Magic number to take into account the default person arriving at 0.
         for(int i = 0; i < amount-1; i++) {
             Person person = this.generatePerson();
             people.add(person);
@@ -125,8 +120,7 @@ public class Airport {
         return people;
     }
 
-    public static long retrieveTime()
-    {
+    public static long retrieveTime() {
         long elapsedTime = System.nanoTime() - launchTime;
         return TimeUnit.NANOSECONDS.toSeconds(elapsedTime);
     }
