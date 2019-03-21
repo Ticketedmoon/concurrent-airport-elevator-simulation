@@ -1,0 +1,13 @@
+[2019-03-21 14:56:11] [INFO] Total People Threads Generated: 10 
+[2019-03-21 14:56:11] [INFO] Person with ID {1} has arrived at the airport at time {0} 
+[2019-03-21 14:56:11] [INFO] Person with ID {1} has requested the elevator[A] to floor {10} with destination floor {7} at 0 seconds 
+[2019-03-21 14:56:12] [INFO] Elevator with ID {A} moving: up 
+[2019-03-21 14:56:12] [INFO] Elevator with ID {A} now on floor {1} 
+[2019-03-21 14:56:13] [INFO] Elevator with ID {A} moving: up 
+[2019-03-21 14:56:13] [INFO] Elevator with ID {A} now on floor {2} 
+[2019-03-21 14:56:15] [INFO] Elevator with ID {A} moving: up 
+[2019-03-21 14:56:15] [INFO] Elevator with ID {A} now on floor {3} 
+[2019-03-21 14:56:16] [INFO] Person with ID {2} has arrived at the airport at time {5} 
+[2019-03-21 14:56:16] [INFO] Person with ID {2} has requested the elevator[A] to floor {1} with destination floor {7} at 5 seconds 
+[2019-03-21 14:56:16] [INFO] Elevator with ID {A} moving: up 
+[2019-03-21 14:56:16] [INFO] Elevator with ID {A} now on floor {4} 
