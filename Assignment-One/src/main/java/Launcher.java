@@ -11,8 +11,8 @@ public class Launcher {
         System.setProperty("java.util.logging.SimpleFormatter.format", "%1$tF %1$tT %4$s - %5$s%6$s%n");
         new LogWriter();
 
-        // NOTE: Change parameter here to adjust how many person threads can spawn.
-        Airport airport = new Airport(100);
+        // NOTE: One can change parameter here to adjust how many person threads can spawn.
+        Airport airport = new Airport(20);
 
         // If GUI parameter passed, disable GUI
         if(args.length > 0 && args[0].toLowerCase().equals("--disable-gui")) {
