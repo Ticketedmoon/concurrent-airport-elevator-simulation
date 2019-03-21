@@ -1,11 +1,18 @@
 package main.java;
 
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.logging.FileHandler;
+import java.util.logging.LogRecord;
 import java.util.logging.Logger;
+import java.util.logging.SimpleFormatter;
 
 // For concurrent access, using ThreadLocalRandom instead of Math.random() results
 // in less contention and, ultimately, better performance.
@@ -14,6 +21,7 @@ public class Airport {
     // Logger
     private static final Logger LOGGER = Logger.getLogger(Airport.class.getName());
     private static long launchTime;
+    private static FileHandler fh;
 
     // Concurrency Control Mechanisms
     private final ReentrantLock airportClosedLock = new ReentrantLock();
@@ -34,8 +42,6 @@ public class Airport {
     private AtomicInteger startAmountOfPeople;
 
     public Airport(int peopleAmount) {
-        System.setProperty("java.util.logging.SimpleFormatter.format", "%1$tF %1$tT %4$s - %5$s%6$s%n");
-
         // Move the generation of people up here so we can exit program gracefully.
         startAmountOfPeople =  new AtomicInteger(ThreadLocalRandom.current().nextInt(peopleAmount, peopleAmount + 1));
         person_executor = Executors.newScheduledThreadPool(startAmountOfPeople.get());
