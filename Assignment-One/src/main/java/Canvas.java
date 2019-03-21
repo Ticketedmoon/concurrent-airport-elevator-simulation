@@ -75,6 +75,7 @@ public class Canvas extends JComponent {
     private void drawObjectsToScreen(Graphics2D g2d, int elevatorPosition) {
         for (Drawable d : drawables) {
             d.draw(g2d);
+
             // Elevator
             if(d.getTitle().equals("elevator")) {
                 d.setBounds(new Rectangle(getPreferredSize().width-300, getPreferredSize().height-100-elevatorPosition, getPreferredSize().width/15, getPreferredSize().height/8));

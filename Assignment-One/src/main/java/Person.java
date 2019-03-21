@@ -1,6 +1,5 @@
 package main.java;
 
-import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
@@ -8,11 +7,14 @@ import java.util.logging.Logger;
 
 import static main.java.Airport.retrieveTime;
 
+/** Person Thread Class
+ *  Elevator communication needed for accessing, using and getting off elevator.*/
 public class Person implements Runnable {
 
     // Logger
     private static final Logger LOGGER = Logger.getLogger(Person.class.getName());
 
+    // General Person lock & Condition - Shared among people
     private final ReentrantLock personLock;
     private final Condition personCondition;
 
@@ -63,7 +65,7 @@ public class Person implements Runnable {
             LOGGER.info(String.format("%s has requested the elevator[%s] to floor {%s} with destination floor {%s} at %s seconds",
                         this, elevator.getElevatorID(), this.getArrivalFloor(), this.getDestFloor(), retrieveTime()));
 
-            // For name just focus on 1 elevator working, we can get more later.
+            // Focus on 1 elevator working.
             elevator.queue(this);
 
             // Wrap .awaits() in while loops on behalf of 'Spurious Wake-ups'
@@ -76,6 +78,7 @@ public class Person implements Runnable {
             LOGGER.info("Elevator Passengers: " + elevator.getCurrentPassengers());
             LOGGER.info("Elevator Weight: " + elevator.getCurrentElevatorWeight() + "kgs.");
 
+            // Have they got off the elevator? If No -> Sleep.
             while(!hasGotOffElevator.get()) {
                 personCondition.await();
             }
@@ -116,6 +119,7 @@ public class Person implements Runnable {
     public void getOffElevator() {
         hasGotOffElevator.getAndSet(true);
     }
+
     @Override
     public String toString() {
         return String.format("Person with ID {%d}", this.id);
